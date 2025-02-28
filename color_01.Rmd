@@ -1,0 +1,96 @@
+---
+title: "STAT6201_Project01_01"
+author: "Terrance Luangrath"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(MASS)
+
+diamond <- read.csv("diamonds4.csv")
+head(diamond)
+```
+
+```{r}
+ggplot(diamond, aes(x=color, fill = color)) +
+  geom_bar() +
+  labs(title = "Distribution of Diamond Colors",
+       x = "Color",
+       y = " Count") +
+  theme_minimal()
+```
+```{r}
+color_summary <- diamond %>%
+  count(color) %>%
+  mutate(proportions = round(n / sum(n), 4))
+color_summary
+```
+
+
+From the Bluenile website about the diamond grades, they classics these color for the diamond. 
+- Colorless diamonds: Most valuable
+  - D color diamonds
+  - E color diamonds
+  - F color diamonds
+- Near-colorless diamonds: Great value diamond
+  - G color daimonds
+  - H color diamonds
+  - I color diamonds
+  - J color diamonds
+- Faint color diamonds: Budget-friendly diamond
+ - K color diamonds
+ 
+```{r}
+diamond_color <- diamond %>%
+  mutate(color_category = case_when(
+    color %in% c("D", "E", "F") ~ "Colorless",
+    color %in% c("G", "H", "I", "J") ~ "Near-Colorless",
+    color %in% c("K") ~ "Faint"
+  ))
+```
+
+
+```{r}
+ggplot(diamond_color, aes(x="", y=color_category, fill=color_category)) + 
+  geom_bar(stat="identity", width=1) + 
+  coord_polar("y", start=0) + 
+  labs(title="") + 
+  theme_void() 
+```
+As you notice that their isn't any `Faint` on this graph. This is cause when you refer to the **figure** above that this dataset doesn't have any `K` color diamond. Thus, this dataset doesn't have any faint color diamonds. 
+
+```{r, warning=FALSE}
+ggplot(diamond_color, aes(x = color, y = price, fill = color)) + 
+  geom_boxplot() +
+  scale_y_continuous(limits = c(0, 10000)) +
+  theme_minimal()
+```
+
+
+```{r}
+model_color <- lm(price ~ color, data=diamond)
+summary(model_color)
+```
+$$\hat{y} = 10,525.2 + (-619.3) \cdot E + (-4320.6) \cdot F + (-5953.5) \cdot G + (-2726.6) \cdot H + (-5745.8) \cdot I + (-6591.1) \cdot J$$
+```{r}
+par(mfrow = c(2, 2))
+plot(model_color)
+```
+
+```{r}
+MASS::boxcox(model_color)
+```
+
+```{r}
+diamond_color$inverse_price <- 1 / sqrt(diamond_color$price)
+model_inverse <- lm(inverse_price ~ color, data = diamond_color)
+MASS::boxcox(model_inverse)
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model_inverse)
+```
+$$\frac{1}{\sqrt{\hat{y}}} = 10,525.2 + (-619.3) \cdot E + (-4320.6) \cdot F + (-5953.5) \cdot G + (-2726.6) \cdot H + (-5745.8) \cdot I + (-6591.1) \cdot J$$
+$$\hat{y} = \frac{1}{(10,525.2 + (-619.3) \cdot E + (-4320.6) \cdot F + (-5953.5) \cdot G + (-2726.6) \cdot H + (-5745.8) \cdot I + (-6591.1) \cdot J)^2}$$
