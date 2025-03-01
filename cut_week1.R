@@ -5,13 +5,14 @@ library(tidyverse)
 # Read in data
 Diamonds<-read.csv("diamonds4.csv", header=TRUE)
 
-# Diamond cuts refer to the proportion, dimensions, and faceting of a diamond.
-# The cuts of a diamond are descriptive of the quality of the gem's faciting, proportion,
-# and polish, as well as how symmetrical the piece is.  Higher grade cuts have better
-# are more symmetrical and have better light performance.  Diamonds in the "good" category
-# are considered to be in the top 25% of diamond cut quality, while "very good" is in the
-# top 15%, and "ideal" is in the top 3%.  Astor by Blue Nile is touted to "reflect
-# the most light possible" and are grade/certified by a number of third parties.
+# Diamond cuts refer to the proportion, dimensions, and faceting of a diamond. 
+# The cuts of a diamond are descriptive of the quality of the gem's faceting,
+# proportion, and polish, as well as how symmetrical the piece is.  Higher grade cuts 
+# are more symmetrical and have better light performance.  Diamonds in the "good" 
+# category are considered to be in the top 25% of diamond cut quality, while 
+# "very good" is in the top 15%, and "ideal" is in the top 3%.  
+# Astor by Blue Nile is touted to "reflect the most light possible" and are 
+# grade/certified by a number of third parties.
 
 #Blue Nile. (n.d.). Diamond cut: Grading scale and buying tips. 
 #https://www.bluenile.com/education/diamonds/cut?srsltid=AfmBOop9PWytZgjMIGYvLwuojS7LFcIV_5Pwh_pNHS44fwFoimTfBnbC 
@@ -99,6 +100,9 @@ summary(cut_lm)
 par(mfrow=c(2,2))
 plot(cut_lm)
 
+par(mfrow=c(1,1))
+acf(cut_lm$residuals, main="ACF plot of Residuals for cut linear model")
+
 # Vertical variance is off.  Assumption 2 not very well met.
 
 #Check boxcox
@@ -120,7 +124,6 @@ ystar2_lm<-lm(ystar2~cut,data=Diamonds)
 
 par(mfrow=c(2,2))
 plot(ystar_lm)
-plot(ystar2_lm)
 
 # 1/sqrt(y) is better.
 summary(ystar2_lm)
