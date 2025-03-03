@@ -1,0 +1,96 @@
+---
+title: "Clarity Analysis"
+author: "Kristina Quintana"
+date: "2025-03-02"
+output: html_document
+---
+**1: Univariate Analysis on Clarity**
+
+Clarity is one of the elements that diamonds are graded based off of since it impacts a gemstone's beauty and value. Diamond clarity ratings are used to quantify and specify the flaws, or characteristics, within a diamond. Internal characteristics are classed inclusions, while surface flaws are called blemishes.
+
+Clarity is considered a less important element since its flaws can be masked or unseen if very small. Additionally, since all diamonds are uniquely formed, natural inclusions and blemishes are inevitable.
+
+Generally, diamonds with fewer and smaller inclusions receive higher clarity grades which are reflected with higher prices.
+
+```{r message=FALSE}
+library(tidyverse)
+diamonds<- read.csv("diamonds4.csv", header= TRUE)
+```
+
+The clarity grading scale is I1, I2, I3 (Included diamonds, lowest quality grades), SI1, SI2 (Slightly Included diamonds), VS1, VS2 (Very Slightly Included diamonds), VVS1, VVS2 (Very, Very Slightly Included diamonds), IF (Internally Flawless), and FL (Flawless).
+
+```{r echo=TRUE}
+levels(factor((diamonds$clarity)))
+```
+
+These are the different clarity grades for sale in the Blue Nile website. Since not all of the grades from each category is included in the data, we will order the different grades from lowest clarity grade to highest clarity grade for our analysis.
+```{r}
+clarity_ordered <- diamonds %>%
+  mutate(clarity = factor(clarity, levels = c("SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF", "FL"))) %>%
+  arrange(clarity)
+
+print(clarity_frequency<-table(clarity_ordered$clarity))
+```
+This table shows that Blue Nile has more SI1 diamonds available. The grade they have the lowest in stock is the FL (Flawless) diamonds. Out of the categories, it has more of the Very Slightly Included diamonds.
+
+```{r}
+ggplot(clarity_ordered, aes(x=clarity))+
+  geom_bar(fill = "blue")+
+  theme(axis.text.x = element_text(angle = 0), 
+        plot.title = element_text(hjust = 0.5))+
+  labs(x="Clarity Grade", y="Counts", title="Diamonds Available Based on Clarity Grade")
+```
+
+This bar plot helps us better visualize the diamonds available in the Blue Nile website based on the clarity grade.
+
+```{r}
+clarity_prop<-clarity_ordered %>%
+  group_by(clarity) %>%
+  summarize(counts=n())%>%
+  mutate(percent=counts/nrow(clarity_ordered))
+
+ggplot(clarity_prop, aes(x = "", y = percent, fill = clarity)) +
+  geom_bar(stat = "identity", width = 1) +  
+  coord_polar(theta = "y") + 
+  labs(title = "Proportion of Clarity Grades Available") +
+  theme_void()  
+```
+
+This is a visual way to view the different clarity grades available.
+
+```{r}
+ggplot(clarity_ordered, aes(x=clarity, y=price))+
+  geom_boxplot(fill="Blue")+
+  labs(x="Clarity Grade", y="Price", title="Distribution of Diamond Prices by Clarity Grade")
+```
+
+Tried to visualize the relationship between clarity grade and price, however the price range is very big and the clarity grades seem to have a lot of outliers. The FL(flawless) group is the only one with a visible boxplot, but this is because it has only 3 data points, and its range is substantial. 
+
+**2. How Clarity is Related to Price**
+
+We are now going to analyze the relationship between clarity and price:
+```{r}
+ggplot(clarity_ordered, aes(x = clarity, y = price)) +
+  geom_point(aes(color = clarity), size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + 
+  theme_minimal() +
+  labs(title = "Scatterplot of Clarity Grade Against Price",
+       x = "Clarity",
+       y = "Price") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Here is another visualization displaying the same information. Looking within the categories of the grades, the price does seem to go up when going up in quality (SI2 to SI1 or VS2 to VS1).
+
+```{r message=FALSE}
+clarity_lm<-lm(price~clarity, data=diamonds)
+summary(clarity_lm)
+```
+
+The original estimated linear regression equation is: 
+yhat = 123403 -117041(IF) -118329(SI2) -120776(SI2) -114324(VS1) -115676(VS2) -114736(VVVS1) -116069(VVS2)
+
+```{r}
+par(mfrow = c(2, 2))
+plot(clarity_lm)
+```
