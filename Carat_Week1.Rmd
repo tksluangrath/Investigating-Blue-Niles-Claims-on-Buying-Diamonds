@@ -1,0 +1,107 @@
+---
+title: "Carat_Week1"
+output: html_document
+date: "2025-03-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(MASS)
+```
+
+
+```{r cars}
+diamond <- read.csv("diamonds4.csv")
+head(diamond)
+```
+
+
+```{r}
+# Distrubution graph of carat
+
+ggplot(diamond, aes(x = carat)) +
+  geom_histogram(binwidth = 0.1, color = "Blue") +
+  labs(title = "Distribution of Diamond Carat",
+       x = "Carat",
+       y = "Count") + scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) + 
+  theme_minimal()
+```
+
+
+
+```{r}
+# Density plot for Carat
+ggplot(diamond, aes(x = carat)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Diamond Carat",
+       x = "Carat",
+       y = "Density")+ scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +theme_minimal()
+# The density is highest within 0-1 carats
+```
+```{r}
+# Created Bins for Carat and looking an proportion of carat within the bins
+carat_summary <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = seq(0, max(carat), by = 0.5), right = FALSE)) %>%
+  drop_na(carat_bin) %>%
+  count(carat_bin) %>%
+  mutate(proportions = round(n / sum(n), 3))
+carat_summary 
+
+# Carat ranges [0,0.5) carats and [0.5,1) carat have the highest numebrs of diamonds 
+```
+
+```{r}
+# Created bigger bins for Carat and looking an proportion of carat within the bins
+carat_summary <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = seq(0, max(carat), by = 1), right = FALSE)) %>%
+  drop_na(carat_bin) %>%
+  count(carat_bin) %>%
+  mutate(proportions = round(n / sum(n), 3))
+carat_summary 
+
+# Carat ranges [0,1) carats are where 72.5% diamonds fall under
+```
+```{r}
+# Pie graph to visualize summary proportion
+ggplot(carat_summary, aes(x = "", y = proportions, fill = carat_bin)) +
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar(theta = "y") +
+  labs(title = "Proportion of Diamonds by Carat Range", fill = "Carat Range") +
+  theme_void() +
+  geom_text(aes(label = scales::percent(proportions)))
+```
+
+
+```{r}
+model_carat <- lm(price ~ carat, diamond)
+summary(model_carat)
+#Estimated Regression equation: y = 25333.9*carat - 13550.9
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model_carat)
+```
+
+```{r}
+# Making a boxcox
+MASS::boxcox(model_carat)
+```
+
+```{r}
+# Sqrt transformation
+diamond$price_sqrt <- sqrt(diamond$price)
+model_carat_sqrt <- lm(price_sqrt ~ carat, diamond)
+
+
+par(mfrow = c(2, 2))
+plot(model_carat_sqrt)
+
+```
+
+```{r}
+summary(model_carat_sqrt)
+#y-hat = (-1.2159 + 73.6923*carat)
+```
+
+
