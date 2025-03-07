@@ -1,0 +1,88 @@
+---
+title: "Color Writeup"
+author: "Terrance Luangrath"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    fig_caption: yes
+---
+
+```{r setup, message=FALSE, echo=FALSE, output=FALSE}
+library(tidyverse)
+library(MASS)
+
+diamond <- read.csv("diamonds4.csv")
+```
+
+# Data Description
+
+The data set, `diamonds4.csv`, contains 5 varaibles that describes more than 1000 different diamonds for sale. 
+
+- `Carat`: *fill in description*
+- `Clarity`: *fill in description*
+- `Color`: how colorless a diamond is, the more colorless the diamonds, the rarer it tends to be
+- `Cut`: *fill in description*
+- `Price`: the price value of the diamond in USD
+
+
+## Color
+
+The diamond color refers to how colorless a diamond is. From the [Blue Nile](https://www.bluenile.com/education/diamonds) website, color is the second most important of the 4Cs of diamond. The more colorless the diamond is the rarer it is. Diamond colors are classify in three main categories, 
+
+- Colorless Diamonds
+- Near-Colorless Diamonds
+- Faint Diamonds
+
+from these three catgories, diamond color are grades from the ranges of D (colorless) to K (faintly colored). However, in this dataset, there exists only diamond graded from D to J.
+
+```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Color Distribution"}
+ggplot(diamond, aes(x=color, fill = color)) +
+  geom_bar() +
+  labs(title = "Distribution of Diamond Colors",
+       x = "Color",
+       y = " Count") +
+  theme_minimal() +
+  theme(legend.position = )
+```
+
+Looking at Figure $\ref{fig:color-count-plot}$, the distribution of diamond color appears fairly consistent, with counts ranging between 150-200 for most color grades. However, color `J` semms to have around 100 diamonds in the data set. 
+
+Each diamond color falls into one of the three categories from Colorless to Faintly Colored. 
+
+- Colorless diamonds: `D`, `E`, `F` Color Diamonds
+- Near-colorless diamonds: `G`, `H`, `I`, `J` Color Diamonds
+- Faint color diamonds: `K` Color Diamonds
+
+Since there is no `K` in the data set, it would be assumed there is no faint color diamonds in the data set. To facilitate the analysis, we will create a new column called `color_cateogry` to group each `color` with their respected category. 
+
+
+```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Color Category visualize through a Pie Chart"}
+
+diamond <- diamond %>%
+  mutate(color_category = case_when(
+    color %in% c("D", "E", "F") ~ "Colorless",
+    color %in% c("G", "H", "I", "J") ~ "Near-Colorless",
+    color %in% c("K") ~ "Faint"
+  ))
+
+color_counts <- diamond %>%
+  count(color_category)
+
+ggplot(color_counts, aes(x="", y=n, fill=color_category)) + 
+  geom_bar(stat="identity", width=1) + 
+  coord_polar("y", start=0) + 
+  labs(title = "Distribution of Diamond Color Groups",
+       x = NULL,
+       y = NULL,
+       fill = "Color Category") + 
+  theme_void()
+
+```
+
+Looking at \ref{fig:color-category-pie-chart}, the distribution of diamond colors seems to be nearly even, with `Colorless` containing slightly higher amount of diamonds. With a well spread of diamond colors, further analysis is needed to understand the claim and how diamond color would be correlates with the other factors in the data set.
+
+
+
+## Relationship with other variables
+
+
