@@ -8,8 +8,10 @@ output:
 ---
 
 ```{r setup, message=FALSE, echo=FALSE, output=FALSE}
+rm(list = ls())
 library(tidyverse)
 library(MASS)
+library(patchwork)
 
 diamond <- read.csv("diamonds4.csv")
 ```
@@ -25,7 +27,7 @@ The data set, `diamonds4.csv`, contains 5 varaibles that describes more than 100
 - `Price`: the price value of the diamond in USD
 
 
-## Color
+## Variable Analysis: Color
 
 The diamond color refers to how colorless a diamond is. From the [Blue Nile](https://www.bluenile.com/education/diamonds) website, color is the second most important of the 4Cs of diamond. The more colorless the diamond is the rarer it is. Diamond colors are classify in three main categories, 
 
@@ -42,7 +44,7 @@ ggplot(diamond, aes(x=color, fill = color)) +
        x = "Color",
        y = " Count") +
   theme_minimal() +
-  theme(legend.position = )
+  theme(legend.position = "none")
 ```
 
 Looking at Figure $\ref{fig:color-count-plot}$, the distribution of diamond color appears fairly consistent, with counts ranging between 150-200 for most color grades. However, color `J` semms to have around 100 diamonds in the data set. 
@@ -83,6 +85,120 @@ Looking at \ref{fig:color-category-pie-chart}, the distribution of diamond color
 
 
 
-## Relationship with other variables
+# Bivariate Analysis
+
+## Bivariate Analysis on Prices 
+
+```{r color-quantile, echo=FALSE}
+color_quantile <-diamond %>%
+  group_by(color) %>%
+  summarize(min = min(price),
+            q1 = quantile(price, probs=0.25),
+            median = median(price),
+            q3 = quantile(price, probs=0.75),
+            max = max(price))
+color_quantile
+```
+
+```{r boxplot-color-price, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=4, fig.height=3, fig.align="center"}
+ggplot(diamond, aes(x = color, y = price, fill = color)) + 
+  geom_boxplot() +
+  scale_y_continuous(limits = c(0, 10000)) +
+  labs(x = "Diamond Color",
+       y = "Price",
+       title = "Boxplot of Diamond Color vs Price") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+On the Blue Nile site, it mentions that color is the second most important among the 4C's for the price of the diamond. Reviewing the box plot, the colorless diamonds (`D`, `E`, and `F`) tends to have higher prices than the near-colorless diamond (`G`, `H`, `I`, and `J`). However, some colorless diamond have higher median values than the near-colorless diamond:
+
+- `H` have higher median values than the colorless diamond `F`
+- `J` (the lowest color grade) has a higher median value than all the colorless diamond.
+
+This suggests that color does play a significant factors in the diamond price, but it's not the most important factors to the diamond prices. Other characteristics, such as `cut`, `clarity`, and `carat`, needs to be considered to help prove the claim. 
+
+## Color vs  Other Diamond Characteristcs
+
+```{r bivariate-setup, warning=FALSE, message=FALSE, echo = FALSE, results="hide"}
+diamond <-diamond %>%
+  mutate(cut = cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))
+
+diamond <- diamond %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5", max(carat), sep="-")),
+                         right = FALSE
+                         ) 
+         ) %>%
+  drop_na(carat_bin)
+
+
+diamond<-diamond %>%
+  mutate(cut = cut %>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))
+
+```
+
+
+```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_cut <- diamond %>%
+  count(cut,color) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+ggplot(color_cut,aes(x=color, y=cut, fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=Percentage), size = 3)+
+  theme(plot.title = element_text(hjust=0.5))+
+  labs(x="Diamond Color by Cut",
+       y="Percentage",
+       title="Diamond Color by Cut") +
+  theme_minimal()
+
+```
+
+```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_clarity <- diamond %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Diamond Color by Clarity",
+    y = "Percentage",
+    title = "Diamond Color by Clarity"
+  ) +
+  theme_minimal()
+```
+
+```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_carat <- diamond %>%
+  count(color, carat_bin) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Diamond Color by Carat",
+    y = "Percentage",
+    title = "Diamond Color by Carat"
+  ) +
+  theme_minimal()
+```
 
 
