@@ -1,0 +1,373 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Dataset and packages, include=FALSE, warning=FALSE}
+# Bring in Tidyverse package
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(patchwork)
+# Read in data
+Diamonds<-read.csv("diamonds4.csv", header=TRUE)
+
+# Order cut levels appropriately.
+Diamonds<-Diamonds%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))
+```
+
+
+```{r New Carat bins and split bins for quad graph, include=FALSE, warning=FALSE}
+
+carat_new_bins <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+carat_new_graph1 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+carat_new_graph2 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0.75, 1, 1.5, 2),
+                         labels = c("0.75-1", "1-1.5", "1.5-2"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+carat_new_graph3 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(2, 3, 4),
+                         labels = c("2-3", "3-4"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+carat_new_graph4 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(4, 5, max(carat)),
+                         labels = c("4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+```
+
+```{r Clarity, Color, Carat Bivar Datasets, include=FALSE, warning=FALSE}
+cut_clarity<-Diamonds%>%
+  count(cut,clarity)%>%
+  group_by(cut)%>%
+  mutate(Percentage= round(n/sum(n)*100,0))%>%
+  ungroup()
+
+cut_color<-Diamonds%>%
+  group_by(cut)%>%
+  count(cut,color)%>%
+  mutate(Percentage= round(n/sum(n)*100,0))%>%
+  ungroup()
+
+CutClarity<-Diamonds%>%
+  group_by(cut,clarity)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+CutColor<-Diamonds%>%
+  group_by(cut,color)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+CutCarat<-carat_new_bins%>%
+  group_by(cut,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+```
+
+```{r Carat Table, include=FALSE, warning=FALSE}
+
+carat_table<-carat_new_bins%>%
+  group_by(cut,carat_bin)%>%
+  summarize(q75=quantile(price,probs=0.75))%>%
+  ungroup()
+
+carat_Minimum_Tab<-carat_table%>%
+  group_by(carat_bin)%>%
+  mutate(Minimum_q75=min(q75))%>%
+  filter(q75==Minimum_q75)
+
+carat_Maximum_Tab<-carat_table%>%
+  group_by(carat_bin)%>%
+  mutate(Maximum_q75=max(q75))%>%
+  filter(q75==Maximum_q75)
+
+carat_Full_Tab<-bind_rows(carat_Minimum_Tab,carat_Maximum_Tab)%>%
+  arrange(carat_bin,q75)
+
+carat_tab_calc<-carat_Full_Tab%>%
+  group_by(carat_bin)%>%
+  mutate(q75_range=max(q75)-min(q75))
+
+carat_tab_alter<-carat_tab_calc%>%
+  select(-q75)
+```
+
+# Variable Analysis: Cut
+
+#### Variable Description
+
+According to the client, Blue Nile, diamond cuts refer to the proportion, dimensions, and faceting of a diamond. The cuts of a diamond are descriptive of the quality of the gem's faceting, proportion, and polish, as well as how symmetrical the piece is.  Higher grade cuts are more symmetrical and have better light performance.  Diamonds in the "good" category are considered to be in the top 25% of diamond cut quality, while "very good" is in the top 15%, and "ideal" is in the top 3%.  Astor by Blue Nile is touted to "reflect the most light possible" and are grade/certified by a number of third parties.
+
+Citation:
+Blue Nile. (n.d.). Diamond cut: Grading scale and buying tips. 
+https://www.bluenile.com/education/diamonds/cut?srsltid=AfmBOop9PWytZgjMIGYvLwuojS7LFcIV_5Pwh_pNHS44fwFoimTfBnbC 
+
+## Cut univariate and Cut with Price
+
+```{r Diamond univar plot 1, fig.width=4,fig.height=3,fig.align="center",echo=FALSE}
+ggplot(Diamonds, aes(x=cut))+
+  geom_bar(fill="blue")+
+  theme(plot.title = element_text(hjust=0.5))+
+  scale_y_continuous(breaks=seq(0,800,50))+
+  labs(x="Diamond Cut", y="Count Available",
+       title="Diamond Cut Counts by Quality")
+```
+
+The cut is highly skewed regarding available quantity of each type.  There are vastly more ideal cuts (739) and very good cuts (382) compared to the good cuts (73) and the Astor ideal cuts (20).
+
+```{r Diamond univar plot 2a Price, fig.width=5.5,fig.height=3.5, echo=FALSE}
+A1<-ggplot(Diamonds, aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  theme(plot.title = element_text(hjust=0.5))+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+A2<-ggplot(Diamonds, aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  coord_cartesian(ylim=c(0,10250))+
+  theme(plot.title = element_text(hjust=0.5))+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+(A1+A2)
+```
+
+When viewing these original side-by-side boxplots, it is obvious that cut has a great deal of price variation and many outliers. This could suggest the other variables at play (carat, color, and clarity) causing deviations. The most outliers are witnessed in the very good and ideal ranges, however, they are the cuts with the largest quantity. The next graph will represent a closer look at the data, focusing on the boxplot boxes, which account for 50% of the data in each cut category.
+
+When viewing the boxed ranges, the values are surprisingly close between "good", "very good", and "ideal".  "Astor ideal" has a pretty wide range and trends more expensive in the 50% range, but the sample size is very low at only 20 diamonds, and it shares more than half of its range with very good and ideal cuts.
+
+```{r quantile, echo=FALSE, results="asis"}
+cut_quant<-Diamonds%>%
+  group_by(cut)%>%
+  summarize(q0=quantile(price,probs=0),
+            q25=quantile(price,probs=0.25),
+            q50=quantile(price,probs=0.5),
+            q75=quantile(price,probs=0.75),
+            q100=quantile(price,probs=1),
+            mean=mean(price))
+cut_quant%>%
+kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Cut and Price Quantiles}")%>%
+  kable_styling(latex_options = "striped")
+```
+
+The quantile data reinforces the similarity in the q75(the value in which 75% of the data lies under) for all cuts.
+
+### Cut and Clarity
+
+```{r Diamond bivar plot 1 Clar,echo=FALSE}
+B1<-ggplot(cut_clarity,aes(x=clarity,y=cut,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Percentage))+
+  labs(x="Diamond Clarity",y="Diamond Cut",
+       title="Diamond Cut by Clarity (Quantity)")
+
+B2<-ggplot(CutClarity,aes(x=clarity,y=cut,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Diamond Clarity",y="Diamond Cut",
+       title="Diamond Cut by Clarity (Average Price in Dollars)")
+
+(B1)/(B2)
+```
+
+A majority of the diamond stock for all cuts are in the lower quality half of the clarity categories carried (SI2-VS1).  "Very good" and "Ideal" diamonds, which are the cuts of the highest quantities, have more than a quarter of their stock in the higher quality half of the clarities available (VVS2-FL).  Additionally, "Very good" and "Ideal" cuts are the only cuts with "Flawless" diamonds.
+
+As clarity increases in the "good" cut category, price typically increases per clarity category (SI2 and SI1 grouped, VVS2 and VVS1 grouped, etc.).  The average price nearly doubles for most instances of increasing clarity category.  An anomaly in VS1 can be described by a majority of the diamonds in this category being of low carat size (under 1 carat) and of comparatively poor color (G,H,I, and J).  There is only one "good" cut with "IF" clarity. This diamond is 3.35 carats and worth $56151.
+
+The "very good" category also increases as the category of clarity increases, though SI1 through VS1 carry a fairly similar average price.  The "IF" clarity diamonds that were also of the "very good" cut were all under 1 carat in weight and nearly two-thirds of the diamonds had a color of G or below.
+
+The "Ideal" category of cut increases from the SI category into the VS category, then drops in price for the VVS and If-FL categories.  There are nearly 100 diamonds in each of the VVS category sections.  A majority of these diamonds (three-quarters or more for each category section) were less than 1 carat in weight and more than half of the diamonds in each VVS section were color "G" or below.
+
+The "Astor Ideal" category increases in average price as clarity increases, similarly to the other categories, with some oscillation between VS1 and VVS1 categories.  Since there are only 20 "Astor Ideal" cut diamonds, the small sample size may contribute to some slightly unexpected fluctuations at the higher clarities.  For example, the price for VSS1 represents the only diamond with those specifications.  Additionally, VS1 has a comparatively high average due to a 2 carat diamond priced at $46,893.
+
+### Cut and Color
+
+```{r Diamond bivar plot 3a Col, echo=FALSE}
+C1<-ggplot(cut_color,aes(x=color,y=cut,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Percentage))+
+  labs(x="Diamond Color",y="Diamond Cut",
+       title="Diamond Cut by Color (Quantity)")
+
+C2<-ggplot(CutColor,aes(x=color,y=cut,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Diamond Color",y="Diamond Cut",
+       title="Diamond Cut by Color (Average Price in Dollars)")
+
+(C1)/(C2)
+```
+
+The distribution of diamond color per cut appears to be a bit more widely varied than for clarity per cut.  Inversely to clarity and cut, approximately half of all of the diamonds for each cut category reside in the most premium colors (D,E,and F).  The other half are distributed between the G,H,I, and J colors.
+
+The average value of diamonds with a "good" quality cut decreases as the color decreases. D,E, and F are considered the most premium colors, so it is not strange that "E" is a bit higher than "D."  Additionally, "E" has an ~4 carat diamond worth \$109,744 in its set of 8 diamonds. Good cuts with G color have 9 diamonds associated with the set; there is a large, 6 carat outlier worth \$165,766.  This inflates the price dramatically.  
+
+The "Very Good" section is not very price predictable by color. The other sections above follow this same trend.  While with clarity, most increases across cuts are consistent, with one or two deviations per cut being explainable by carat, or a combination of carat and color, it would be nearly every category of color within a cut that would have to be analyzed to explain why price does not neatly descend with decreasing color quality.
+
+### Cut and Carat
+
+```{r Diamond bivar plot 4a carat, fig.width=8, fig.height=6, echo=FALSE}
+D1<-ggplot(Diamonds, aes(x=cut, y=carat))+
+  geom_boxplot(fill="orange")+
+  coord_cartesian(ylim=c(0,2))+
+  theme(plot.title = element_text(hjust=0.5))+
+  labs(x="Diamond Cut", y="Diamond Carat",
+       title="Diamond Cut by Carat Range")
+
+D2<-ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="blue")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Cut",
+       title="Diamond Cut by Carat Range")
+
+(D1)/(D2)
+```
+
+The graph of diamond carat against diamond cut had a great deal of outliers, which presented similarly to the diamond price by cut graph in the previous section.  Therefore, this assessment utilizes the truncated graph, containing all values that are not considered outliers.
+
+For a majority of the cuts ("Good","Very good", and "Astor Ideal"), 50% of the diamonds fall within the range of 0.5 carats to 1 carat, or just slightly over.  For the "Ideal" cut range, this is slightly lowered at a range of 0.3 carats to just under 1 carat.
+
+The relationship with cut and carat is quite apparent with the heat map.  As the carat bin size increases within all cut categories, the price increases.  This price increase is gradual and sequential.  However, when you look through the columns, analyzing the cuts per each bin, the pricing is usually somewhat similar, with "Ideal" and "Astor Ideal" typically being worth a bit more than "good" and "very good." Some evidence against cut being the most important of the 4 Cs is that in almost all cases, moving horizontally to the next 0.25 carat wide bin size raises the average price more than moving vertically to the most expensive premium cut in the column. That evidence is explored more in the graphics below.
+
+```{r Diamond bivar plot 5 carat, fig.width=13, fig.height=10, echo=FALSE}
+E1<-carat_new_graph1%>%
+  drop_na(cut,price,carat_bin)%>%
+  ggplot(aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(0,2500))+
+  facet_wrap(~carat_bin)+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+
+E2<-carat_new_graph2%>%
+  drop_na(cut,price,carat_bin)%>%
+  ggplot(aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(1000,17500))+
+  facet_wrap(~carat_bin)+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+
+E3<-carat_new_graph3%>%
+  drop_na(cut,price,carat_bin)%>%
+  ggplot(aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(15000,60000))+
+  facet_wrap(~carat_bin)+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+
+E4<-carat_new_graph4%>%
+  drop_na(cut,price,carat_bin)%>%
+  ggplot(aes(x=cut, y=price))+
+  geom_boxplot(fill="gold")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(50000,250000))+
+  facet_wrap(~carat_bin)+
+  labs(x="Diamond Cut", y="Diamond Price",
+       title="Diamond Price by Cut")
+
+(E1+E2)/(E3+E4)
+```
+```{r Diamond bivar table carat cut, echo=FALSE}
+carat_tab_alter%>%
+  kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Minimum and Maximum 75th Quantile Analysis per Carat Bin (Inner change)}")%>%
+  kable_styling(latex_options = "striped")
+```
+
+The q75 mark was selected for comparison, as this represents the value in which 75% of the data in each category falls under.  The table depicts the cuts in each bin with the highest q75 price and the lowest q75 price.  The lowest q75 mark is subtracted from the highest q75 mark and this constitutes the difference in q75 price between the "cheapest" cut in the range and the "most expensive" cut in the range.  This represents the inner difference, the difference between the q75 value of cuts within the same carat range.  This can be compared to the outer difference, the difference in q75 price when a bin increases to the next bin size.  Due to both the decrease in data at upper carat ranges, and due to the way Blue Nile structures their diamond sizing guide, the bins change to increasing by half a carat size between 1 and 2 carats, then 1 carat in size after the 2 carat mark.  This is metric was used for both inner and outer change graphs/tables.
+
+```{r Diamond bivar plot 6 carat, echo=FALSE}
+carat_outer_change1 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+carat_outer_change2 <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(2, 3, 4, 5, max(carat)),
+                         labels = c("2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+F1<-ggplot(carat_outer_change1, aes(x=carat_bin, y=price))+
+  geom_boxplot(fill="lightblue")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(0,17500))+
+  labs(x="Diamond Carat Bin", y="Diamond Price",
+       title="Price change between Carat Bins")
+
+F2<-ggplot(carat_outer_change2, aes(x=carat_bin, y=price))+
+  geom_boxplot(fill="lightblue")+
+  theme(axis.text.x=element_text(angle=90), plot.title = element_text(hjust=0.5))+
+  coord_cartesian(ylim=c(17500,250000))+
+  labs(x="Diamond Carat Bin", y="Diamond Price",
+       title="Price change between Carat Bins")
+
+(F1+F2)
+```
+
+```{r Diamond bivar plot 6 table carat, fig.cap="Minimum and Maximum 75th Quantile Analysis per Carat Bin (Outer change)", echo=FALSE}
+carat_range_1<-carat_new_bins%>%
+  group_by(carat_bin)%>%
+  summarize(q75=quantile(price,probs=0.75))%>%
+  mutate(q75_Change=q75-lag(q75))%>%
+  ungroup()
+
+carat_range_1%>%
+  kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Minimum and Maximum 75th Quantile Analysis per Carat Bin (Outer change)}")%>%
+  kable_styling(latex_options = "striped")
+```
+When comparing the two tables, based on difference in q75 values, the price always increases more by increasing the carat size (outer change), regardless of cut, compared to increasing the quality of the cut within a carat bin (inner change).  An exception is the final line of the first table.  This is because this is the largest carat size offered, so there are no further values to compare it to in the second table.
