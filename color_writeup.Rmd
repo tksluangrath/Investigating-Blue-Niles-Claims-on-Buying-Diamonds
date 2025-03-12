@@ -7,11 +7,11 @@ output:
     fig_caption: yes
 ---
 
-```{r setup, message=FALSE, echo=FALSE, output=FALSE}
+```{r setup, message=FALSE, echo=FALSE, output=FALSE, warning=FALSE}
 rm(list = ls())
 library(tidyverse)
 library(MASS)
-library(patchwork)
+library(kableExtra)
 
 diamond <- read.csv("diamonds4.csv")
 ```
@@ -35,9 +35,9 @@ The diamond color refers to how colorless a diamond is. From the [Blue Nile](htt
 - Near-Colorless Diamonds
 - Faint Diamonds
 
-from these three catgories, diamond color are grades from the ranges of D (colorless) to K (faintly colored). However, in this dataset, there exists only diamond graded from D to J.
+from these three categories, diamond color are grades from the ranges of D (colorless) to K (faintly colored). However, in this dataset, there exists only diamond graded from D to J.
 
-```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Color Distribution"}
+```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Distribution"}
 ggplot(diamond, aes(x=color, fill = color)) +
   geom_bar() +
   labs(title = "Distribution of Diamond Colors",
@@ -58,7 +58,7 @@ Each diamond color falls into one of the three categories from Colorless to Fain
 Since there is no `K` in the data set, it would be assumed there is no faint color diamonds in the data set. To facilitate the analysis, we will create a new column called `color_cateogry` to group each `color` with their respected category. 
 
 
-```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Color Category visualize through a Pie Chart"}
+```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Category visualize through a Pie Chart"}
 
 diamond <- diamond %>%
   mutate(color_category = case_when(
@@ -83,11 +83,12 @@ ggplot(color_counts, aes(x="", y=n, fill=color_category)) +
 
 Looking at \ref{fig:color-category-pie-chart}, the distribution of diamond colors seems to be nearly even, with `Colorless` containing slightly higher amount of diamonds. With a well spread of diamond colors, further analysis is needed to understand the claim and how diamond color would be correlates with the other factors in the data set.
 
-
+Since there is only two group with a near even split, we will work with each individual colors for the rest of the analysis to get a bigger picture of the data.
 
 # Bivariate Analysis
 
 ## Bivariate Analysis on Prices 
+
 
 ```{r color-quantile, echo=FALSE}
 color_quantile <-diamond %>%
@@ -97,7 +98,10 @@ color_quantile <-diamond %>%
             median = median(price),
             q3 = quantile(price, probs=0.75),
             max = max(price))
-color_quantile
+
+color_quantile %>%
+  kable(caption = "Bivariate Analysis on Prices", align = "c") %>%
+  kable_styling(position = "center")
 ```
 
 ```{r boxplot-color-price, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=4, fig.height=3, fig.align="center"}
@@ -142,6 +146,7 @@ diamond<-diamond %>%
 ```
 
 
+
 ```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
 color_cut <- diamond %>%
   count(cut,color) %>%
@@ -160,6 +165,11 @@ ggplot(color_cut,aes(x=color, y=cut, fill=Percentage))+
   theme_minimal()
 
 ```
+
+Reviewing the relationship between diamond color grades and cut, it shows that the majority of the diamonds for all the color grades fall under the ideal cut category. This suggets that higher quality are more common amohg diamonds regardless of the color.  
+
+The heat map shows that most diamonds are cut as ideal. This would align with the claim that `cut` is the most important factor because the cut is more proitize regardless of the color grades. If `color` was more dominant, then we would have seen color more even distributed across `cut`. Since lower grade cuts are less common than this futher supports our claim. 
+
 
 ```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
 color_clarity <- diamond %>%
@@ -181,6 +191,11 @@ ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) +
   theme_minimal()
 ```
 
+The higher the color grade, the better the clarity of the diamond tends to be. This suggests that buyers prioritize color over clarity. For buyers that want a lower color grade diamonds, people are more likely to choose a higher clarity as a trade-off. 
+
+In relation to the claim, buyers are more likley not to prioritize clarity as much for diamond selection. Since the spread is more even distributed, it suggests that people may choose a better color or cut over a fawless clarity. This aligns with the claim that color plays a more significant role than clarity. 
+
+
 ```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
 color_carat <- diamond %>%
   count(color, carat_bin) %>%
@@ -201,4 +216,6 @@ ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
   theme_minimal()
 ```
 
+The highest percentage on the heat map is between $(0.25, 0.75]$ carat range. This suggests that most of the diamonds in the data set are in the smaller carat ranges. Since the smaller the carat, the more affordable the diamond, this suggests suggests that most diamonds sold regardless the color grades have a small carat size. This may be because people are more likely to buy a smaller carat size then a large carat size for balancing cost. People who tends to buy lower color grade diamond are more likely to buy a larger carat size. 
 
+Going back to the claim, since cut is the most important and carat is the least prioritized, people are more willing to spend on diamond color than carat. This suggests that color is the second most proitize after cut. So, color plays a bigger role in the diamond price then carat.
