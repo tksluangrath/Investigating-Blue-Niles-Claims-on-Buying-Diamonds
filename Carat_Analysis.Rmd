@@ -30,7 +30,7 @@ The term Carat refers to a diamond's weight. One diamond carat is equal to 200 m
 </div>
 
 <div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
-1. Univariate Analysis on Carat
+1. Analysis of Carat
 </div>
 
 <div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
@@ -92,7 +92,7 @@ ggplot(carat_summary, aes(x = "", y = proportions, fill = carat_bin)) +
 ```
 </div>
 <div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
-2. Bivariate Analysis on Clarity and Price
+2.Analysis of Clarity and Price
 </div>
 <div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
 The scatter plot shows the relationship between carat and price  with a fitted regression line as the  trend. There is a positive correlation between carat and price, meaning that the diamonds with higher carats tend to be more expensive. The regression line shows the overall trend which reflects a  increase in price as carat size increases. There are some outliers that appear in the higher carat range which could be due to cut, color, and clarity.
