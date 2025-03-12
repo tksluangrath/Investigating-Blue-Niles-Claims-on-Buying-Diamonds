@@ -1,0 +1,132 @@
+
+<div style="text-align: center; font-size: 48px; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
+  Carat Analysis
+</div>
+<div style="text-align: center; font-size: 36px; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
+  Humaid Billoo
+</div>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(MASS)
+library(ggrepel)
+library(kableExtra)
+library(scales)
+```
+
+
+```{r,include=FALSE}
+diamond <- read.csv("diamonds4.csv")
+head(diamond)
+```
+
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+
+The term Carat refers to a diamond's weight. One diamond carat is equal to 200 mg, or .2 grams, of a diamond. Diamond Carats can also be measured in points such as 100 points equals 1 carat. Even though carat is the size of the diamond it is not the only thing that impacts a diamond visually.
+
+</div>
+
+<div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
+1. Univariate Analysis on Carat
+</div>
+
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+The histogram shows the distribution of diamond carat sizes, showing a heacy right skewed pattern where smaller diamonds are more common than larger ones. The majority of diamonds fall within the 0.2 to 1.0 carat range, and have a sharp decline in frequency as carat size increases. This suggests that smaller diamonds are more readily available and purchased more often while larger diamonds are less readily available and purchased less often. 
+</div>
+<div style="text-align: center">
+```{r,echo=FALSE, fig.width=5, fig.height=3, fig.cap="Distrubution Graph of Carat"}
+
+ggplot(diamond, aes(x = carat)) +
+  geom_histogram(binwidth = 0.3, fill = "skyblue", color = "black", alpha = 1) + 
+  labs(title = "Diamond Carat Distribution",x = "Carat Size",y = "Number of Diamonds") +
+  scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal(base_size = 6)
+```
+</div>
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+The density plot further reinforces the right-skewed distribution observed in the histogram, showing that the majority of diamonds have a small carat size, with the highest density occurring  below 0.5 carats
+</div>
+<div style="text-align: center">
+```{r,echo=FALSE, fig.width=5, fig.height=3, fig.cap="Density plot for Carat"}
+# Density plot for Carat
+ggplot(diamond, aes(x = carat)) +
+  geom_density(fill = "skyblue", color = "black", alpha = 1) +
+  labs(title = "Density Plot of Diamond Carat",x = "Carat Size",y = "Density") +
+  scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
+  theme_minimal(base_size = 6)
+# The density is highest within 0-1 carats
+```
+</div>
+
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+The majority of diamonds fall within the 0.25 to 0.75 carat range, which collectively accounts for about 65.3% of the dataset. The proportion drops significantly beyond 1 carat, with diamonds between 1 and 1 carats making up only 16.3%, and as the carat increases the number of diamonds in those ranges decreases.
+</div>
+```{r,echo=FALSE, fig.width=3, fig.height=3, fig.cap="Summary of Diamonds by Carat Range"}
+carat_summary <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5,6,7,8), right = FALSE)) %>%
+  drop_na(carat_bin) %>%
+  count(carat_bin) %>%
+  mutate(proportions = round(n / sum(n), 3))
+kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"), 
+      caption = "Summary of Diamonds by Carat Range")
+
+```
+
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+The Pie graph shows the samne that most diamonds fall udner the range of 0.25-0.5 through 0.5-0.75 carat range.
+</div>
+<div style="text-align: center">
+```{r,echo=FALSE, fig.width=4, fig.height=4, fig.cap="Pie graph summarizing Carat proportion"}
+# Pie graph to visualize summary proportion
+ggplot(carat_summary, aes(x = "", y = proportions, fill = carat_bin)) +
+  geom_bar(stat = "identity", width = 1) +  
+  coord_polar("y", start = 0) +
+  labs(title = "Proportion of Diamonds by Carat Range", fill = "Carat Range") +
+  theme_void()
+
+
+```
+</div>
+<div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
+2. Bivariate Analysis on Clarity and Price
+</div>
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+The scatter plot shows the relationship between carat and price  with a fitted regression line as the  trend. There is a positive correlation between carat and price, meaning that the diamonds with higher carats tend to be more expensive. The regression line shows the overall trend which reflects a  increase in price as carat size increases. There are some outliers that appear in the higher carat range which could be due to cut, color, and clarity.
+</div>
+
+<div style="text-align: center">
+```{r,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size"}
+ggplot(diamond, aes(x = carat, y = price)) +
+  geom_point(color = "skyblue", alpha = 1) +
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Diamond Price vs Carat Size",x = "Carat Size",y = "Price") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal(base_size = 6)
+  
+```
+</div>
+<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+This shows the average diamond cost in each carat range and from this table we can see an increase in price as the range values in each raneg increase.
+</div>
+
+<div style="text-align: center">
+```{r,echo=FALSE}
+
+carat_price_summary <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
+  group_by(carat_bin) %>%
+  summarise(Min_Price = min(price, na.rm = TRUE),Max_Price = max(price, na.rm = TRUE),Avg_Price = round(mean(price, na.rm = TRUE), 2)
+  )
+# Display the table in a clean format using knitr::kable()
+kable(carat_price_summary, col.names = c("Carat Range", "Min Price", "Max Price", "Average Price"),
+      caption = "Summary of Diamond Prices by Carat Range")
+
+```
+
+
+
+
