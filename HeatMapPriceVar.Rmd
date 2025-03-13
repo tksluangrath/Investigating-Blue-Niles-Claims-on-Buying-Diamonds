@@ -1,0 +1,156 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library, include=FALSE}
+# Library Packages
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(patchwork)
+
+# Read in data
+Diamonds<-read.csv("diamonds4.csv", header=TRUE)
+```
+
+```{r Other Data, message=FALSE, warning=FALSE, echo=FALSE}
+Diamonds<-Diamonds%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))%>%
+  mutate(color=color%>%
+           fct_relevel(c("J","I","H","G","F","E","D")))
+
+carat_new_bins <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+CutCarat<-carat_new_bins%>%
+  group_by(cut,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ColorCarat<-carat_new_bins%>%
+  group_by(color,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ClarityCarat<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+```
+
+```{r Graph 1, echo=FALSE}
+ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="blue")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Cut",
+       title="Diamond Cut by Carat Range")
+```
+```{r Table 1 cut, echo=FALSE}
+cut_Minimum_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Minimum=min(Ave_Price))%>%
+  filter(Ave_Price==Minimum)
+
+cut_Maximum_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Maximum=max(Ave_Price))%>%
+  filter(Ave_Price==max(Ave_Price))
+
+cut_Full_Tab<-bind_rows(cut_Minimum_Tab,cut_Maximum_Tab)%>%
+  arrange(carat_bin,Ave_Price)
+
+cut_tab_calc<-cut_Full_Tab%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Range=max(Ave_Price)-min(Ave_Price))
+
+cut_tab_calc%>%
+  kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Minimum and Maximum Average Cut Values per Carat Bin}")%>%
+  kable_styling(latex_options = "striped")
+```
+
+
+```{r Graph 2, echo=FALSE}
+ggplot(ColorCarat,aes(x=carat_bin,y=color,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="orange")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Cut",
+       title="Diamond Color by Carat Range")
+```
+
+```{r Table 2 color, echo=FALSE}
+color_Minimum_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Minimum=min(Ave_Price))%>%
+  filter(Ave_Price==Minimum)
+
+color_Maximum_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Maximum=max(Ave_Price))%>%
+  filter(Ave_Price==max(Ave_Price))
+
+color_Full_Tab<-bind_rows(color_Minimum_Tab,color_Maximum_Tab)%>%
+  arrange(carat_bin,Ave_Price)
+
+color_tab_calc<-color_Full_Tab%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Range=max(Ave_Price)-min(Ave_Price))
+
+color_tab_calc%>%
+  kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Minimum and Maximum Average Color Values per Carat Bin}")%>%
+  kable_styling(latex_options = "striped")
+```
+
+```{r Graph 3, echo=FALSE}
+ggplot(ClarityCarat,aes(x=carat_bin,y=clarity,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="pink")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Cut",
+       title="Diamond Clarity by Carat Range")
+```
+
+
+```{r Table 3 clarity, echo=FALSE}
+clarity_Minimum_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Minimum=min(Ave_Price))%>%
+  filter(Ave_Price==Minimum)
+
+clarity_Maximum_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  mutate(Maximum=max(Ave_Price))%>%
+  filter(Ave_Price==max(Ave_Price))
+
+clarity_Full_Tab<-bind_rows(clarity_Minimum_Tab,clarity_Maximum_Tab)%>%
+  arrange(carat_bin,Ave_Price)
+
+clarity_tab_calc<-clarity_Full_Tab%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Range=max(Ave_Price)-min(Ave_Price))
+
+clarity_tab_calc%>%
+  kbl(format="latex",booktabs = TRUE,
+      caption="\\textbf{Minimum and Maximum Average Clarity Values per Carat Bin}")%>%
+  kable_styling(latex_options = "striped")
+```
