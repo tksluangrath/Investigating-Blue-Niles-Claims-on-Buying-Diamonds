@@ -1,0 +1,326 @@
+---
+title: "Color Writeup"
+author: "Terrance Luangrath"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    fig_caption: yes
+---
+
+```{r setup, message=FALSE, echo=FALSE, output=FALSE, warning=FALSE}
+rm(list = ls())
+library(tidyverse)
+library(MASS)
+library(patchwork)
+library(kableExtra)
+
+diamond <- read.csv("diamonds4.csv")
+```
+
+# Data Description
+
+The data set, `diamonds4.csv`, contains 5 varaibles that describes more than 1000 different diamonds for sale. 
+
+- `Carat`: *fill in description*
+- `Clarity`: *fill in description*
+- `Color`: how colorless a diamond is, the more colorless the diamonds, the rarer it tends to be
+- `Cut`: *fill in description*
+- `Price`: the price value of the diamond in USD
+
+
+## Variable Analysis: Color
+
+The diamond color refers to how colorless a diamond is. From the [Blue Nile](https://www.bluenile.com/education/diamonds) website, color is the second most important of the 4Cs of diamond. The more colorless the diamond is the rarer it is. Diamond colors are classify in three main categories, 
+
+- Colorless Diamonds
+- Near-Colorless Diamonds
+- Faint Diamonds
+
+from these three categories, diamond color are grades from the ranges of D (colorless) to K (faintly colored). However, in this dataset, there exists only diamond graded from D to J.
+
+```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Distribution"}
+ggplot(diamond, aes(x=color, fill = color)) +
+  geom_bar() +
+  labs(title = "Distribution of Diamond Colors",
+       x = "Color",
+       y = " Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Looking at Figure $\ref{fig:color-count-plot}$, the distribution of diamond color appears fairly consistent, with counts ranging between 150-200 for most color grades. However, color `J` semms to have around 100 diamonds in the data set. 
+
+Each diamond color falls into one of the three categories from Colorless to Faintly Colored. 
+
+- Colorless diamonds: `D`, `E`, `F` Color Diamonds
+- Near-colorless diamonds: `G`, `H`, `I`, `J` Color Diamonds
+- Faint color diamonds: `K` Color Diamonds
+
+Since there is no `K` in the data set, it would be assumed there is no faint color diamonds in the data set. To facilitate the analysis, we will create a new column called `color_cateogry` to group each `color` with their respected category. 
+
+
+```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Category visualize through a Pie Chart"}
+
+diamond <- diamond %>%
+  mutate(color_category = case_when(
+    color %in% c("D", "E", "F") ~ "Colorless",
+    color %in% c("G", "H", "I", "J") ~ "Near-Colorless",
+    color %in% c("K") ~ "Faint"
+  ))
+
+color_counts <- diamond %>%
+  count(color_category)
+
+ggplot(color_counts, aes(x="", y=n, fill=color_category)) + 
+  geom_bar(stat="identity", width=1) + 
+  coord_polar("y", start=0) + 
+  labs(title = "Distribution of Diamond Color Groups",
+       x = NULL,
+       y = NULL,
+       fill = "Color Category") + 
+  theme_void()
+
+```
+
+Looking at \ref{fig:color-category-pie-chart}, the distribution of diamond colors seems to be nearly even, with `Colorless` containing slightly higher amount of diamonds. With a well spread of diamond colors, further analysis is needed to understand the claim and how diamond color would be correlates with the other factors in the data set.
+
+Since there is only two group with a near even split, we will work with each individual colors for the rest of the analysis to get a bigger picture of the data.
+
+# Bivariate Analysis
+```{r bivariate-setup, warning=FALSE, message=FALSE, echo = FALSE, results="hide"}
+diamond <-diamond %>%
+  mutate(cut = cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))
+
+diamond <- diamond %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5", max(carat), sep="-")),
+                         right = FALSE
+                         ) 
+         ) %>%
+  drop_na(carat_bin)
+
+
+diamond<-diamond %>%
+  mutate(cut = cut %>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))
+
+```
+
+
+## Bivariate Analysis on Prices 
+
+
+```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE}
+g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Cut",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+
+g2 <- ggplot(diamond, aes(x = color, y = price/10000, fill = color)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Color",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g3 <- ggplot(diamond, aes(x = clarity, y = price/10000, fill = clarity)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Clarity",
+       x = "Diamond Clarity",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Color",
+       x = "Carat Bin",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+(g1 | g2) / (g3 | g4) + 
+  plot_annotation(title = "Violin Plot of Diamond Categories", 
+  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+
+
+```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE}
+g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  theme_minimal() +
+  labs(title = "Diamond Price by Cut",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g2 <- ggplot(diamond, aes(x = color, y = price/10000, fill = color)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Color",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g3 <- ggplot(diamond, aes(x = clarity, y = price/10000, fill = clarity)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Clarity",
+       x = "Diamond Clarity",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Color",
+       x = "Carat Bin",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+(g1 | g2) / (g3 | g4) + 
+  plot_annotation(title = "Violin Plot of Diamond Categories", 
+  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+
+
+
+
+## Color vs  Other Diamond Characteristcs
+
+
+
+
+```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_cut <- diamond %>%
+  count(cut,color) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=Percentage), size = 3)+
+  theme(plot.title = element_text(hjust=0.5))+
+  labs(x="Diamond Color by Cut",
+       y="Color",
+       title="Diamond Color by Cut") +
+  theme_minimal()
+
+```
+
+
+```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_clarity <- diamond %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Diamond Color by Clarity",
+    y = "Clarity",
+    title = "Diamond Color by Clarity"
+  ) +
+  theme_minimal()
+```
+
+```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+color_carat <- diamond %>%
+  count(color, carat_bin) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Color",
+    y = "Carat",
+    title = "Diamond Color by Carat"
+  ) +
+  theme_minimal()
+```
+```{r heatmap-cut-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+cut_carrat <- diamond %>%
+  count(cut, carat_bin) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+ggplot(cut_carrat, aes(x = cut, y = carat_bin, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Cut",
+    y = "Carat",
+    title = "Diamond Cut by Carat"
+  ) +
+  theme_minimal()
+```
+
+```{r heatmap-cut-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+clarity_cut <- diamond %>%
+  count(cut, clarity) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "purple") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Cut",
+    y = "Clarity",
+    title = "Diamond Cut by Clarity"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
