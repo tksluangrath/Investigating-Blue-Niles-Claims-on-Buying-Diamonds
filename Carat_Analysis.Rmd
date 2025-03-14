@@ -1,57 +1,52 @@
+---
+title: "Carat Writeup"
+author: "Humaid Billoo"
+date: "`r Sys.Date()`"
+output: 
+    bookdown::html_document2:
+      fig_caption: yes
+    bookdown::pdf_document2:
+      fig_caption: yes
+---
 
-<div style="text-align: center; font-size: 48px; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
-  Carat Analysis
-</div>
-<div style="text-align: center; font-size: 36px; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
-  Humaid Billoo
-</div>
-
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, message=FALSE, echo=FALSE, output=FALSE, warning=FALSE}
+rm(list = ls())
 library(tidyverse)
 library(MASS)
-library(ggrepel)
 library(kableExtra)
-library(scales)
-```
 
-
-```{r,include=FALSE}
 diamond <- read.csv("diamonds4.csv")
-head(diamond)
 ```
 
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
+# Data Description
 
-The term Carat refers to a diamond's weight. One diamond carat is equal to 200 mg, or .2 grams, of a diamond. Diamond Carats can also be measured in points such as 100 points equals 1 carat. Even though carat is the size of the diamond it is not the only thing that impacts a diamond visually.
+The data set, `diamonds4.csv`, contains 5 variables that describes more than 1000 different diamonds for sale. 
 
-</div>
+- `Carat`: Measures a diamond’s weight, not its size, the heavier the diamond the rarer it is.
+- `Clarity`: *fill in description*
+- `Color`: How colorless a diamond is, the more colorless the diamonds, the rarer it tends to be
+- `Cut`: *fill in description*
+- `Price`: the price value of the diamond in USD
 
-<div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
-1. Analysis of Carat
-</div>
 
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-The histogram shows the distribution of diamond carat sizes, showing a heacy right skewed pattern where smaller diamonds are more common than larger ones. The majority of diamonds fall within the 0.2 to 1.0 carat range, and have a sharp decline in frequency as carat size increases. This suggests that smaller diamonds are more readily available and purchased more often while larger diamonds are less readily available and purchased less often. 
-</div>
-<div style="text-align: center">
-```{r,echo=FALSE, fig.width=5, fig.height=3, fig.cap="Distrubution Graph of Carat"}
+## Variable Analysis: Carat
 
+The diamond Carat refers to the weight of a diamond. From the [Blue Nile](https://www.bluenile.com/education/diamonds) website, carat is the second most important of the 4Cs of diamond. Carat weight choice is a matter of preference, one weight is not necessarily better than another. Typically, heavier  diamonds are rarer than ones with lower carat weights and diamond prices can reflect this.
+
+```{r carat-count-plot, warning=FALSE,message=FALSE,echo=FALSE,fig.width=5,fig.height=3, fig.cap="Diamond Carat Distribution",fig.align="center"}
 ggplot(diamond, aes(x = carat)) +
-  geom_histogram(binwidth = 0.3, fill = "skyblue", color = "black", alpha = 1) + 
-  labs(title = "Diamond Carat Distribution",x = "Carat Size",y = "Number of Diamonds") +
+  geom_histogram(fill = "skyblue", color = "black", alpha = 1) + 
+  labs(title = "Diamond Carat Distribution",x = "Carat",y = "Count") +
   scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
   scale_y_continuous(labels = scales::comma) +
   theme_minimal(base_size = 6)
 ```
-</div>
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-The density plot further reinforces the right-skewed distribution observed in the histogram, showing that the majority of diamonds have a small carat size, with the highest density occurring  below 0.5 carats
-</div>
-<div style="text-align: center">
-```{r,echo=FALSE, fig.width=5, fig.height=3, fig.cap="Density plot for Carat"}
+
+Looking at Figure \@ref(fig:carat-count-plot), the distribution of Diamond Carat it appears with the majority with counts ranging between 0.2-1.0 carats. There is also a sharp decline in frequency as carat size increases.
+
+
+
+```{r Density-Plot-of-Diamond-Carat,echo=FALSE, fig.width=5, fig.height=3, fig.cap="Density plot for Carat",fig.align="center"}
 # Density plot for Carat
 ggplot(diamond, aes(x = carat)) +
   geom_density(fill = "skyblue", color = "black", alpha = 1) +
@@ -60,27 +55,27 @@ ggplot(diamond, aes(x = carat)) +
   theme_minimal(base_size = 6)
 # The density is highest within 0-1 carats
 ```
-</div>
+Looking at Figure \@ref(fig:Density-Plot-of-Diamond-Carat), The density plot further reinforces the right-skewed distribution observed in the histogram, showing that the majority of diamonds have a small carat size, with the highest density occurring  between 0.2 and 1 carats
 
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-The majority of diamonds fall within the 0.25 to 0.75 carat range, which collectively accounts for about 65.3% of the dataset. The proportion drops significantly beyond 1 carat, with diamonds between 1 and 1 carats making up only 16.3%, and as the carat increases the number of diamonds in those ranges decreases.
-</div>
-```{r,echo=FALSE, fig.width=3, fig.height=3, fig.cap="Summary of Diamonds by Carat Range"}
+```{r Table-Carat-Price, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Summary of Carat Proportion"}
+
 carat_summary <- diamond %>%
-  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5,6,7,8), right = FALSE)) %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
   drop_na(carat_bin) %>%
   count(carat_bin) %>%
   mutate(proportions = round(n / sum(n), 3))
 kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"), 
-      caption = "Summary of Diamonds by Carat Range")
+      caption = "Summary of Diamonds by Carat Range") %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "3cm") %>%
+  column_spec(3, width = "3cm")
 
 ```
 
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-The Pie graph shows the samne that most diamonds fall udner the range of 0.25-0.5 through 0.5-0.75 carat range.
-</div>
-<div style="text-align: center">
-```{r,echo=FALSE, fig.width=4, fig.height=4, fig.cap="Pie graph summarizing Carat proportion"}
+Looking at Table \@ref(fig:Table-Carat-Price), The majority of diamonds fall within the 0.25 to 0.75 carat range, which collectively accounts for about 65.3% of the dataset. The proportion drops significantly beyond 1 carat, with diamonds between 1 and 1 carats making up only 16.3%, and as the carat increases the number of diamonds in those ranges decreases.
+
+```{r Pie-Chart-Summary,echo=FALSE, fig.width=4, fig.height=4, fig.cap="Pie graph summarizing Carat proportion",fig.align="center"}
 # Pie graph to visualize summary proportion
 ggplot(carat_summary, aes(x = "", y = proportions, fill = carat_bin)) +
   geom_bar(stat = "identity", width = 1) +  
@@ -88,45 +83,136 @@ ggplot(carat_summary, aes(x = "", y = proportions, fill = carat_bin)) +
   labs(title = "Proportion of Diamonds by Carat Range", fill = "Carat Range") +
   theme_void()
 
-
 ```
-</div>
-<div style="font-weight: bold; font-family: 'Times New Roman', Times, serif;font-size: 30px;">
-2.Analysis of Clarity and Price
-</div>
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-The scatter plot shows the relationship between carat and price  with a fitted regression line as the  trend. There is a positive correlation between carat and price, meaning that the diamonds with higher carats tend to be more expensive. The regression line shows the overall trend which reflects a  increase in price as carat size increases. There are some outliers that appear in the higher carat range which could be due to cut, color, and clarity.
-</div>
+Figure \@ref(fig:Pie-Chart-Summary), The Pie graph visualizes Table \@ref(tab:Table-Carat-Proportion) and also shows that most diamonds fall udner the range of 0.25-0.5 through 0.5-0.75 carat range. It also shows that there are less of higher carat diamonds which reflects the claim that the heavier diamonds are more rare
 
-<div style="text-align: center">
-```{r,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size"}
+# Bivariate Analysis
+
+## Bivariate Analysis on Prices 
+
+```{r Scatter-Price,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
 ggplot(diamond, aes(x = carat, y = price)) +
   geom_point(color = "skyblue", alpha = 1) +
+  labs(title = "Diamond Price vs Carat",x = "Carat",y = "Price") +
   geom_smooth(method = "lm", color = "blue") +
-  labs(title = "Diamond Price vs Carat Size",x = "Carat Size",y = "Price") +
   scale_y_continuous(labels = scales::comma) +
   theme_minimal(base_size = 6)
   
 ```
-</div>
-<div style="font-family: 'Times New Roman', Times, serif;font-size: 18px;">
-This shows the average diamond cost in each carat range and from this table we can see an increase in price as the range values in each raneg increase.
-</div>
 
-<div style="text-align: center">
-```{r,echo=FALSE}
+Figure \@ref(fig:Scatter-Price) shows the relationship between carat and price  with a fitted regression line as the trend. There is a positive correlation between carat and price, meaning that the diamonds with higher carats tend to be more expensive. The regression line shows the overall trend which reflects an increase in price as carat size increases. There are some outliers that appear in the higher carat range which could be due to cut, color, and clarity.
 
-carat_price_summary <- diamond %>%
+
+```{r Box-Carat-Price, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=7, fig.height=3, fig.align="center",fig.cap="Box and whisker plot"}
+diamond <- diamonds 
+diamond <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE))
+
+ggplot(diamond, aes(x = carat_bin, y = price)) +
+  geom_boxplot(fill="skyblue") +
+  labs(title = "Diamond Prices by Carat Ranges",
+       x = "Carat",
+       y = "Price") +
+  theme_minimal()
+```
+
+The figure \@ref(fig:Box-Carat-Price) shows that diamond prices generally increase with carat. The  variability in  carat rangee and prices for diamonds in the [0, 0.25] carat range are  low, while those in the [5, 6] carat range are  high. There are  outliers in most carat ranges, especially in the mid-range carats, indicating some diamonds are priced significantly higher than others of similar size probably due to the other 3Cs of the 4Cs.
+
+
+```{r Table-Carat-Price-Var, warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=3,fig.align="center",fig.cap="Carat Price Variability"}
+carat_price_summary2 <- diamond %>%
   mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
   group_by(carat_bin) %>%
-  summarise(Min_Price = min(price, na.rm = TRUE),Max_Price = max(price, na.rm = TRUE),Avg_Price = round(mean(price, na.rm = TRUE), 2)
-  )
-# Display the table in a clean format using knitr::kable()
-kable(carat_price_summary, col.names = c("Carat Range", "Min Price", "Max Price", "Average Price"),
-      caption = "Summary of Diamond Prices by Carat Range")
+  summarise(
+    Min_Price = min(price, na.rm = TRUE),
+    Max_Price = max(price, na.rm = TRUE),
+    Avg_Price = round(mean(price, na.rm = TRUE), 2),
+    Variability_Percent = round((Max_Price - Min_Price) / Min_Price * 100,2))
+kable(carat_price_summary2, col.names = c("Carat Range", "Min Price", "Max Price", "Average Price", "Variability (%)"),
+      caption = "Summary of Diamond Prices ($) by Carat Range") %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "3cm") %>%
+  column_spec(3, width = "3cm")
+```
+Looking at Table \@ref(tab:Table-Carat-Price-Var), there seems to be clear trend of the average and max price increasing as the carat size increases. Smaller diamonds in range 0-0.25 carats have lower average prices and have higher variability, showing price fluctuations which could be influenced by factors such as cut, color, and clarity which also applies to the middle ranges 0.25-1.5 carats. However, in the larger carat ranges 2-6 carats, as the average prices continue to rise, the variability decreases significantly, which tells us that larger diamonds tend to have more predictable pricing, likely due to their rarity of higher carat diamonds.
 
+or section 3, you will be graded on these elements:
+ Describing any transformation performed on the variables when fitting the SLR model, including
+reasons why these specific transformations were used.
+ Checking SLR assumptions.
+ Providing contextual comments on how the SLR model inform us how price of diamonds are related
+to carat.
+
+## Carat and Price SLR
+
+```{r Residual_Plot, message=FALSE, echo=FALSE,fig.width=5, fig.height=4,fig.align="center",fig.cap="Residuals plot"}
+model_carat <- lm(price ~ carat, diamond)
+par(mfrow = c(2,2))
+plot(model_carat)
+residuals_model <- residuals(model_carat)
+```
+
+```{r ACF_plot, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model"}
+residuals_model <- residuals(model_carat)
+acf(residuals_model)
+```
+
+According to Figure \@ref(fig:Residual_Plot) the `price` and `carat` models assumptions are:
+
+- `Assumption 1 is not met`: The average value of the residuals for differing values along the x-axis having a apparent curvature in the residual plot.
+- `Assumption 2 is not met`: The vertical spread of the residuals not being constant as we move from left to right in the resdiual plot
+- `Assumption 3 is not met`: There being High Autocorrelation at Lag 1 as seen from Figure \@ref(fig:ACF_plot) which suggests a high dependence in the residuals.
+- `Assumption 4 is  met`: The plots do fall closely to the QQ line, which is evidence that the observations follow a normal distribution.
+
+
+```{r Residual_Plot_Trans, message=FALSE, fig.width=7, fig.height=3.7,echo=FALSE,fig.align="center",fig.cap="Residuals plot"}
+diamond$price_sqrt <- sqrt(diamond$price)
+model_carat_sqrt <- lm(price_sqrt ~ carat, diamond)
+
+
+par(mfrow = c(2, 2))
+plot(model_carat_sqrt)
+```
+```{r ACF_plot_tran, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model"}
+residuals_model_sq <- residuals(model_carat_sqrt)
+acf(residuals_model_sq)
 ```
 
 
+The assumptions having not been met required a transformation. A Square Root transformation was conducted on Price variable to correct the non linear relationship between price and carat.
 
+The transformed models assumption based on figure \@ref(fig:Residual_Plot_Trans) with keeping in mind that with real data, assumptions are rarely met 100%.
+
+- `Assumption 1 is met`: The average value of the residuals for differing values along the x-axis does not have an apparent curvature in the residual plot.
+- `Assumption 2 is met`: The vertical spread of the residuals is being constant as we move from left to right in the resdiual plot
+- `Assumption 3 is met`: There being low Autocorrelation at Lag 1 as seen from Figure \@ref(fig:Residual_Plot_Trans) which suggests a low dependence in the residuals.
+- `Assumption 4 is  met`: The plots do fall closely to the QQ line, which is evidence that the observations follow a normal distribution.
+
+
+
+
+
+```{r Summary, warning=FALSE, message=FALSE, echo = FALSE}
+
+print(summary(model_carat_sqrt))
+
+
+```
+
+The Simple Linear regression model gives an equation of `Sqrt(Price) = 10.14643 + (57.19923*Carat)
+- This means that for each 1 unit increase in carat the square root of price increases by 57.19923
+This model gives a `p-value < 2.2e-16`
+
+- This means carat is a strong predictor of price which supports the claim from blue nile that carat has the biggets impact on price.
+The model gives a `R2 value of 0.8959`
+
+- This tells us that 89.59% of the variation in sqrt(price) is explained by carat.
+
+
+The regression model effectively shows the relationship between carat and price and showing a strong fit. The model results confirm that carat is a significant predictor of price which means that as the carat increases the price follows a trend that is predictable.
+
+ 
+  
+   
 
