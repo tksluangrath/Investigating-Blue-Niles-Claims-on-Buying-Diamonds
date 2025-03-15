@@ -1,0 +1,271 @@
+---
+title: "Clarity Analysis"
+author: "Kristina Quintana"
+date: "2025-03-15"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Clarity
+
+Clarity is one of the elements considered when grading diamonds since it impacts a gemstone's beauty and value. Diamond clarity ratings are used to quantify and specify the flaws, or characteristics, within a diamond. Internal characteristics are classed inclusions, while surface flaws are called blemishes. A diamond's clarity rating is influenced by a combination of factors such as its size, the number of easily seen characteristics, the position of a characteristic, the nature of a characteristic, and how much contrast there is between the characteristic and surrounding diamond.
+
+According to [Blue Nile](https://www.bluenile.com/education/diamonds) website, clarity is considered a less important element since a diamond's flaws can be masked or unseen due to the factors mentioned, but in general, diamonds with less visible inclusions receive higher clarity ratings which are reflected with higher prices. Additionally, since all diamonds are uniquely formed, natural inclusions and blemishes are inevitable. Clarity becomes more important among gemstones formed with characteristics that make flaws more visible, such as fancy-shaped diamonds. Since diamond clarity is one of the 4Cs, it affects price and should be considered when shopping for a diamond (according to Blue Nile Website).
+
+According to [Blue Nile](https://www.bluenile.com/education/diamonds) website, the clarity grading scale is:
+
+- **I1,I2, I3** (Included diamonds, lowest quality grades)
+- **SI1, SI2** (Slightly Included diamonds)
+- **VS1, VS2** (Very Slightly Included diamonds)
+- **VVS1, VVS2** (Very, Very Slightly Included diamonds)
+- **IF** (Internally Flawless)
+- **FL** (Flawless)
+
+## 1: Univariate Analysis on Clarity
+```{r echo=FALSE, message=FALSE}
+library(tidyverse)
+library(knitr)
+diamonds<- read.csv("diamonds4.csv", header= TRUE)
+```
+
+```{r echo=FALSE, fig.width=4, fig.height=2, fig.align="center"}
+# arrange clarity by rating
+clarity_ordered <- diamonds %>%
+  mutate(clarity = factor(clarity, levels = c("SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF", "FL"))) %>%
+  arrange(clarity)
+
+# bar chart of counts and clarity grade
+ggplot(clarity_ordered, aes(x=clarity))+
+  geom_bar(fill = "blue")+
+  theme(axis.text.x = element_text(angle = 0), 
+        plot.title = element_text(hjust = 0.5))+
+  labs(x="Clarity Grade", y="Counts", title="Diamonds Available Based on Clarity Grade")
+```
+```{r echo=FALSE, fig.width=4, fig.height=3, fig.align="center"}
+# generate frequency table
+clarity_frequency <- table(clarity_ordered$clarity)
+clarity_frequency <- t(as.data.frame(clarity_frequency))
+rownames(clarity_frequency) <- c("Clarity", "Frequency")
+
+# display frequency table
+kable(clarity_frequency, caption = "Frequency Table of Clarity Grades")
+```
+
+- The bar chart above supports Blue Nile's website does not carry diamonds in the Included category, containing the lowest grades. 
+- There is a large gap between amount of Flawless and Internally Flawless diamonds compared to the rest of the lower clarity grade diamonds available. The table reveals that the FL category only has three diamonds.
+- SI and VSI categories have more diamonds available than any other category.
+
+```{r echo=FALSE, message=FALSE, fig.width=5, fig.height=5, fig.align="center"}
+library(scales)
+
+clarity_prop<-clarity_ordered %>%
+  group_by(clarity) %>%
+  summarize(counts=n())%>%
+  mutate(percent=counts/nrow(clarity_ordered))
+
+# bar chart of proportions of clarity grades
+ggplot(clarity_prop, aes(x = "", y = percent, fill = clarity)) +
+  geom_bar(stat = "identity", width = 1) +  
+  coord_polar(theta = "y") + 
+  labs(title = "Proportion of Clarity Grades Available") +
+  theme_void()  
+```
+
+This pie graph helps visualize the proportions of clarity grades seen in the bar chart and table from above. This visual reinforces that the SI and VSI categories have more diamonds available than any other category.
+
+## 2. Bivariate Analysis
+
+### 2.1 Clarity with Price
+According to the Blue Nile Website, the highest clarity grades, with fewer and smaller inclusions, have the highest prices. Since Blue Nile does not carry I clarity diamonds, the lowest clarity grades, and has more of certain clarity categories, such as SI and VS diamonds, the relationship will best be seen by looking within the clarity categories.
+
+```{r echo=FALSE, message=FALSE}
+library(knitr)
+
+min_max_prices <- clarity_ordered %>%
+  group_by(clarity) %>%
+  summarize(
+    min_price = min(price, na.rm = TRUE),
+    max_price = max(price, na.rm = TRUE))
+
+kable(min_max_prices, caption = "Min and Max Prices by Clarity")
+```
+
+- The table above shows the least and most expensive diamonds in each clarity grade. 
+- The table reveals that between all the clarity grades, the most expensive diamond belongs to the FL clarity grade, the highest rating, and the second most expensive belongs to the VS2 grade, which is not the second highest clarity grade. The least expensive diamond belongs to VS1 grade, which is not close to the lowest clarity grade. These values do no suggest a direct relationship.
+- Within the SI and VVS grade categories, the price range extrema increase in value when increasing in clarity grade (i.e. SI2 to SI1, VVS2 to VVS1).
+
+```{r echo=FALSE, fig.width=5, fig.height=4.5, fig.align="center", message=FALSE, warning=FALSE}
+# Define custom colors for each clarity level
+clarity_colors <- c(
+  "SI2" = "#F8766D",  
+  "SI1" = "#F8766D",  
+  "VS2" = "#7CAE00",  
+  "VS1" = "#7CAE00",  
+  "VVS2" = "#00BFC4", 
+  "VVS1" = "#00BFC4", 
+  "IF" = "#619CFF",   
+  "FL" = "#FF61CC"    
+)
+
+# Create the violin plot with manual color adjustments
+ggplot(clarity_ordered, aes(x = clarity, y = price / 10000, fill = clarity)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Clarity",
+       x = "Diamond Clarity",
+       y = "Price (in $10,000s)") +
+  scale_fill_manual(values = clarity_colors) +  # Apply custom colors
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+```
+
+The violin plot above shows the relationship between price and the clarity grades and provides a visual to accompany the table from above. Although there is not enough data for a visual for the FL category, we know from the table that it contains the most expensive diamond. Looking at the two quality grades within the SI and VVS categories, the higher quality grades (SI1, VS1, VVS1) contain more expensive diamonds, confirming the trend seen in our table. 
+
+### 2.2 Clarity with Other Variables
+- The Blue Nile website claims that the "best value" diamonds are the ones that appear as beautiful as the highest quality diamonds but do not share the high price tag. This suggests that diamonds they value, or have more of in stock of, will not necessarily rank the highest in their categories nor be the most expensive diamonds. 
+- Since the FL diamonds have the highest rating and include the most expensive diamond, yet are the lowest in stock, we are going to look at these three diamonds alone and their features before comparing them to the other categories with the other variables.
+
+```{r echo=FALSE, message=FALSE}
+# dataframe with only FL diamonds
+FL_diamonds <- clarity_ordered %>%
+  filter(clarity=="FL")
+FL_table <- head(FL_diamonds)
+
+# display FL table
+kable(FL_table, caption = "Table of FL Diamonds")
+```
+
+The FL category alone shows that diamonds sold with the highest clarity rating (no inclusions) have a higher color rating (more colorless) and a higher quality cut (reflects more light). This suggests that color and cut must play a more important factor in a Flawless diamond's appearance than carat and price. The two significantly lower carat weight diamonds also are significantly lower in price. This suggests that carat weight and clarity rating might independently have a bigger influence in diamond price, but it might not indicate that it is the highest rating among all of the elements. The very low stock of Flawless diamonds and the huge price range support Blue Nile's claim that clarity is not very important to them when choosing the most beautiful diamond, and that a higher price does not necessarily reflect higher quality all around. We will now look at all of the diamonds among all of the clarity categories to see how they relate to the other variables to get a bigger picture.
+
+```{r clarity and cut heat maps, echo=FALSE, message=FALSE}
+library(patchwork)
+
+# new dataframe with cut and clarity ordered 
+cut_clarity<-diamonds%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))
+
+# compare cut and clarity by count 
+cut_clarity1<-cut_clarity%>%
+  count(cut,clarity)%>%
+  group_by(cut)%>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare cut and clarity by price
+cut_clarity2<-cut_clarity%>%
+  group_by(cut,clarity)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+ 
+# Heat maps for diamond cut by clarity
+B1<-ggplot(cut_clarity1,aes(x=clarity,y=cut,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Percentage))+
+  labs(x="Diamond Clarity",y="Diamond Cut",
+       title="Diamond Cut by Clarity (Quantity)")
+
+B2<-ggplot(cut_clarity2,aes(x=clarity,y=cut,fill=avg_price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=avg_price))+
+  labs(x="Diamond Clarity",y="Diamond Cut",
+       title="Diamond Cut by Clarity (Average Price in Dollars)")
+
+(B1)/(B2)
+```
+
+- Looking across all of the clarity grades and cuts in the "Diamond Cut by Clarity (Quantity) heat map, a majority of the higher quality cuts (Astor Ideal and Ideal) fall in the SI1, VS1, and VS2 clarity grades. The majority of lower quality cuts (Very Good and Good) also fall in the same clarity range with the addition of SI2 as well. Diamonds in the lowest clarity category of SI contain more lower quality cuts in stock. The inverse is true when looking at the higher clarity category of VS, however, this trend does not continue in the highest clarity grades. This supports that Blue Nile has more higher quality cuts with lower clarity grades in stock since they claim that certain cuts with more reflections may hide the inclusions in SI and VS diamonds, resulting in a more higher valued appearance.
+- Looking at the Diamond Cut by Clarity (Average Price in Dollars) heat map, there is a visible increase in average price as cut quality increases among the VS1 grade alone and a visible increase in price as cut quality decreases in the higher quality VVS, IF, and FL categories. This suggests that a higher clarity rating might have a bigger impact on price than a higher cut rating.
+
+```{r clarity and carat heat maps, echo=FALSE, message=FALSE}
+# new dataframe with carat new bins and clarity ordered
+carat_new_bins <- clarity_ordered %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+# compare carat and clarity by count 
+carat_clarity1<-carat_new_bins%>%
+  count(carat_bin,clarity)%>%
+  group_by(carat_bin)%>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare carat and clarity by price
+carat_clarity2<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+ 
+# Heat maps for diamond carat by clarity
+C1<-ggplot(carat_clarity1,aes(x=carat_bin,y=clarity,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(axis.text.x=element_text(angle=30),plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Percentage))+
+  labs(x="Carat Bin",y="Clarity",
+       title="Diamond Carat by Clarity (Quantity)")
+
+C2<-ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(axis.text.x=element_text(angle=30), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=avg_price))+
+  labs(x="Carat Bin",y="Clarity",
+       title="Diamond Carat by Clarity (Average Price in Dollars)")
+
+(C1)/(C2)
+```
+
+- Looking at the Diamond Carat by Clarity (Quantity) heat map, there is more diamonds with a clarity rating of VS2 in the 4-5 carat bin. Within the lowest carat bin of 0-0.25, there are more diamonds with higher clarity categories (VS, VVS, IF). Among the rest of the higher carat weight bins, either the opposite trend or no trend is seen. Overall, there is no strong relationship seen in this heat map. This suggests that clarity and carat weight only do not have an important relationship that Blue Nile considers when determining the value of a diamond.
+- Looking at the Diamond Carat by Clarity (Average Price in Dollars) heat map, as the clarity rating increased in the highest carat weights, so does the average price of the diamond. Since this trend is very strong among just the highest carat bins, it suggests that although clarity rating might have a positive relationship with price, carat weight might play a bigger role in this relationship.
+
+```{r echo=FALSE, message=FALSE}
+# compare color and clarity by count 
+color_clarity1 <- clarity_ordered %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare color and clarity by price 
+color_clarity2 <- clarity_ordered%>%
+  group_by(color,clarity)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+
+# Heat maps for diamond color by clarity
+D1<-ggplot(color_clarity1, aes(x = clarity, y = color, fill = Percentage)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  geom_text(aes(label = Percentage), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(
+    x = "Clarity",
+    y = "Color",
+    title = "Diamond Color by Clarity"
+  ) 
+D2<-ggplot(color_clarity2,aes(x=clarity,y=color,fill=avg_price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=avg_price))+
+  labs(x="Clarity",y="Color",
+       title="Diamond Color by Clarity (Average Price in Dollars)")
+
+(D1)/(D2)
+```
+
+- Looking at the top Diamond Color by Clarity heat map, the majority of the diamonds fall in the SI1, VS2, and VS1 clarity grades, which contain slightly more colorless diamonds (D, E, F). This is not seen in the higher clarity grades, which could also be due to the lower stock of diamonds in those grades.
+- Looking across the Diamond Color by Clarity (Average Price in Dollars) heat map, the most expensive diamonds fall within a clarity grade of VS1 or higher. The VS1, VVS2, IF, and FL diamonds that are colorless (D, E, F) are more expensive. The VVS1 diamonds that have H, G, F, and D color diamonds are the most expensive. Overall, this heat map does not indicate a clear relationship between color, clarity, and price.
+
