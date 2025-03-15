@@ -1,0 +1,193 @@
+---
+title: "Week 3 Claim/4Cs"
+author: "Katie Dunning (umu5hh)"
+date: "2025-03-15"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library, include=FALSE}
+# Library Packages
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(patchwork)
+
+# Read in data
+Diamonds<-read.csv("diamonds4.csv", header=TRUE)
+```
+
+```{r Other Data, message=FALSE, warning=FALSE, echo=FALSE}
+Diamonds<-Diamonds%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))%>%
+  mutate(color=color%>%
+           fct_relevel(c("J","I","H","G","F","E","D")))
+
+carat_new_bins <- Diamonds %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+CutCarat<-carat_new_bins%>%
+  group_by(cut,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ColorCarat<-carat_new_bins%>%
+  group_by(color,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ClarityCarat<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+```
+
+```{r Table comb short tab, echo=FALSE}
+cut_Min_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Cut=Ave_Price)%>%
+  mutate(Min_Cut=min(Ave_Price_Cut))%>%
+  filter(Ave_Price_Cut==Min_Cut)
+
+cut_Max_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Cut=Ave_Price)%>%
+  mutate(Max_Cut=max(Ave_Price_Cut))%>%
+  filter(Ave_Price_Cut==Max_Cut)
+
+color_Min_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Color=Ave_Price)%>%
+  mutate(Min_Color=min(Ave_Price_Color))%>%
+  filter(Ave_Price_Color==Min_Color)
+
+color_Max_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Color=Ave_Price)%>%
+  mutate(Max_Color=max(Ave_Price_Color))%>%
+  filter(Ave_Price_Color==Max_Color)
+
+clarity_Min_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Clar=Ave_Price)%>%
+  mutate(Min_Clar=min(Ave_Price_Clar))%>%
+  filter(Ave_Price_Clar==Min_Clar)
+
+clarity_Max_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Clar=Ave_Price)%>%
+  mutate(Max_Clar=max(Ave_Price_Clar))%>%
+  filter(Ave_Price_Clar==Max_Clar)
+
+clarity_Full_Tab2<-bind_rows(clarity_Min_Tab,clarity_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Clar)
+
+color_Full_Tab2<-bind_rows(color_Min_Tab,color_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Color)
+
+cut_Full_Tab2<-bind_rows(cut_Min_Tab,cut_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Cut)
+
+clarity_tab_calc2<-clarity_Full_Tab2%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Rng_Clar=max(Ave_Price_Clar)-min(Ave_Price_Clar))%>%
+  ungroup()%>%
+  select(-clarity,-Ave_Price_Clar,-carat_bin)
+
+color_tab_calc2<-color_Full_Tab2%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Rng_Color=max(Ave_Price_Color)-min(Ave_Price_Color))%>%
+  ungroup()%>%
+  select(-color,-Ave_Price_Color,-carat_bin)
+
+cut_tab_calc2<-cut_Full_Tab2%>%
+  group_by(carat_bin)%>%
+  mutate(Price_Rng_Cut=max(Ave_Price_Cut)-min(Ave_Price_Cut))%>%
+  select(-cut,-Ave_Price_Cut)
+
+Full_Tab2<-bind_cols(cut_tab_calc2,color_tab_calc2,clarity_tab_calc2)%>%
+  select(carat_bin, Price_Rng_Cut, Price_Rng_Color, Price_Rng_Clar)%>%
+  distinct()
+```
+
+# Importance By Price of the 4Cs
+
+```{r Graph Combo,fig.width=13, fig.height=12, echo=FALSE}
+A1<-ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="blue")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Cut",
+       title="Diamond Cut by Carat Range")
+
+A2<-ggplot(ColorCarat,aes(x=carat_bin,y=color,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="orange")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Color",
+       title="Diamond Color by Carat Range")
+
+A3<-ggplot(ClarityCarat,aes(x=carat_bin,y=clarity,fill=Ave_Price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="pink")+
+  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Ave_Price))+
+  labs(x="Carat Bin",y="Clarity",
+       title="Diamond Clarity by Carat Range")
+
+(A1)/(A2)/(A3)
+```
+
+Blue Nile's educational page evaluates the importance of the 4Cs when selecting a diamond. "Importance" can be evaluated in a number of different ways, one of which is by price. To evaluate the order of importance the 4Cs hold with regard to price, the numerical variable of carat was controlled for by filtering the diamonds into selected bin sizes based off of a Blue Nile diamond carat size chart.
+
+The effect of each categorical variable (cut, color, and clarity) can be measured against the effect of carat and then compared to each other.  The above graphs represent the average prices for each combination of carat bin and subcategory of cut, color, and clarity.  Moving vertically from the bottom on each graph represents the price change with increasing the quality of the diamond within a certain carat range, while moving horizontally represents the price of increasing from one carat bin range to the next carat bin range up (increasing the weight of the diamond). 
+
+An example, moving vertically from the bottom at "Very good"($359) to the max average price cut, which is "Astor Ideal", in the 0-0.25 carat bin range equals \$554.  Moving horizontally from "Very Good" at 0-0.25 carats to 0.25-0.5 carats equals \$599)
+
+The effect of this assessment on all points for each categorical variable is:
+
+*Cut: Increasing the carat bin size to the next bin always yields a higher average price compared to increasing cut quality to the maximum average price cut within the current bin.
+
+*Color: Increasing the carat bin size to the next bin yields a higher average price compared to increasing color until the 1.5-2 carat bin range; when increasing color quality within and past the 1.5-2 carat bin range, color accounts for the larger average price.
+
+*Clarity: Increasing the carat bin size to the next bin yields a higher average price compared to increasing clarity until the 0.75-1 carat bin range; when increasing clarity quality within and past the 0.75-1 carat bin range, clarity accounts for the larger average price.
+
+A possible reason for the outcome of color and clarity is that flaws and discoloration may become more noticeable as the weight of the diamonds increase; therefore, at higher weights, the clarity and the color may be more important than the size.
+
+```{r Kable Table, fig.pos='H', echo=FALSE}
+Full_Tab2%>%
+  kbl(format="latex",booktabs = TRUE,caption="\\textbf{Clarity/Color/Cut Max-Min Ave Price Range per Carat Bin}")%>%
+kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+The categorical members of the 4Cs can be more apparently compared to each other via the table of max-min price range.
+
+The table was created by taking the maximum quality subcateogry value and subtracting the minimum quality subcategory value (vertical orientation on the graphs) for each carat bin.  This was repeated for cut, clarity, and color. This establishes the range between the "priciest" subcategory and the "cheapest" subcategory of a carat bin range.
+
+Comparing cut, color, and clarity directly, the results are:
+
+*Clarity is typically the most important variable to cost, except in the case of the 3-4 carat bin range, in which color is the most important.  
+
+*Color is the second most important variable.  
+
+*Carat is the third most important variable, except in the case of lower carat bin sizes, in which case it becomes the first or second most important variable depending on range.
+
+*Cut is the least important variable, except for at the lowest size carat bin.  
+
+Strictly from a price standpoint of importance, this goes against the claims of most and least important 4C rankings on Blue Nile's education page except for color.  Carat was not given a direct ranking of importance, however the initial graphs prove the claim that larger carat diamonds are more expensive than smaller carat diamonds; this is especially true of high carat diamonds with high quality.
+
