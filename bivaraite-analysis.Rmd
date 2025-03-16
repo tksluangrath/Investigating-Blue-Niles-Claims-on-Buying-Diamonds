@@ -113,6 +113,8 @@ diamond<-diamond %>%
 ## Bivariate Analysis on Prices 
 
 
+There are several factors that contribute to the diamond pricing, the four main factors that we are looking at is `carat`, `clarity`, `color`, `cut`. In the analysis, we will explore each factors individually and how they contribute to the diamonds price. By using a violin plot, we can visualize the full distribution of the data, including potential outliers, the density ofobservations, and the overall shape of distribution.
+
 ```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
   geom_violin() +
@@ -147,7 +149,7 @@ g3 <- ggplot(diamond, aes(x = clarity, y = price/10000, fill = clarity)) +
 
 g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) + 
   geom_violin() +
-  labs(title = "Diamond Price by Color",
+  labs(title = "Diamond Price by Cut",
        x = "Carat Bin",
        y = "Price (in $10,000s)") +
   theme_minimal() +
@@ -160,6 +162,15 @@ g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) +
   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
 
+In \ref{ref:violin-plot-full-scale}, it is difficult to clearly observe the distribution of the data, this could the presence of many outliers across the different diamond factors. This could be certain factors holding a higher prority than other diamond factors. 
+
+- Looking at `carat`, as the diamond carat weight increase, the diamond prices also increasing, showing a positive relationship.
+- For diamond clarity, while flawless seems to have the highest price, but this is likely skewed due to the fact that there is only 3 diamonds that falls into the flawless categories. As a result, it's difficult to conclude that clarity plays a major role in pricing. Espcially, since clarity does not follow a consistent trends like the other categories.
+- Diamond colors follow a consistent trends as the highest color grade is associated with higher prices.
+- For the diamond cut, it seems that the `Very Good` cut shows higher prices compared to `Ideal` and `Astor Ideal` cuts. This suggests that other factors such as `carat` and `color`, have more influence over than `cut`.
+
+
+Since, these violin plots are difficult to visualize full-scale, let's zoom into the a price range of \$0 to \$10,000 grasp a better bvisualize of the shape of the diamond prices distribution.
 
 
 ```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE}
@@ -208,12 +219,23 @@ g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) +
         axis.title.y = element_text(size = 8))
 
 (g1 | g2) / (g3 | g4) + 
-  plot_annotation(title = "Violin Plot of Diamond Categories", 
+  plot_annotation(title = "Zoom-In Violin Plot of Diamond Categories", 
   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
 
+Looking at \ref{ref:violin-plot-zoom-in}, we can visualize some clear details of the diamond categories.
 
+- The plot for diamond cuts  shows that `Very Good` and `Astor Ideal` cut have higher price distribution over the other two types of cut. In all the cut catgoires, outliers are present espically `Very Good` cut. This suggests that the price of the diamond can spike regardless of the cut quality.
+- The plot for diamond colors shows a positive trend. As the color grade increase, the diamond price also increase. Suggesting that the less color the diamond has, the higher the value is. 
+- The plot of diamond clarity shows a relatively even plot. Looking at flawless (`FL`) and internally flawless (`IF`), they seems to have the most noticeable outliers, but the rest of clarity shows a similar spread. 
+- The plot of diamond carat shows a strong positive relationship with price. However, most diamonds are clustered into the smaller bin, but that could be due to the fact, smaller diamonds are more common. 
 
+How does this relates to the Blue Nile claims?
+
+- `Cut` is the most important factor, but in the plot, it shows that `Ideal` cut doesn't have the highest price, but `Very Good` outperform the other cuts. This suggests cut does influence the price, but other factors play a higher significant values than `Cut`. 
+- The plot helps support the claim that colorless diamonds are worth more than near-colorless diamond. As the color grade shows a trend in the diamond price playing a significant role in the diamond price.
+- The price distribution across `Clarity` is relatively even. This shows a lack of clear trends across the clarity levels. Suggesting that people prioritize color or cut over clarity. Thus, clarity is not a sufficient factor in the diamond price.
+- `Carat` shows a strong positive relationship with price. This does support the claim that the carat weight affects the diamond price the most. However, carat also interacts with other factors like `Cut` and `Color` reinforcing that people do take in account other factors beside carat. 
 
 
 ## Color vs  Other Diamond Characteristcs
