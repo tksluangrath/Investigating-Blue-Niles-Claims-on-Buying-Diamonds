@@ -115,7 +115,7 @@ diamond<-diamond %>%
 
 There are several factors that contribute to the diamond pricing, the four main factors that we are looking at is `carat`, `clarity`, `color`, `cut`. In the analysis, we will explore each factors individually and how they contribute to the diamonds price. By using a violin plot, we can visualize the full distribution of the data, including potential outliers, the density ofobservations, and the overall shape of distribution.
 
-```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE}
+```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE, fig.width= 10, fig.height = 6}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
   geom_violin() +
   labs(title = "Diamond Price by Cut",
@@ -173,7 +173,7 @@ In \ref{ref:violin-plot-full-scale}, it is difficult to clearly observe the dist
 Since, these violin plots are difficult to visualize full-scale, let's zoom into the a price range of \$0 to \$10,000 grasp a better bvisualize of the shape of the diamond prices distribution.
 
 
-```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE}
+```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE, fig.width= 10, fig.height = 6}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
   geom_violin() +
   scale_y_continuous(limits = c(0, 1))  +
@@ -240,10 +240,10 @@ How does this relates to the Blue Nile claims?
 
 ## Color vs  Other Diamond Characteristcs
 
+It's important how each categories interact with the diamond price, but how does each categories interact with each other? 
 
 
-
-```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center"}
 color_cut <- diamond %>%
   count(cut,color) %>%
   group_by(color) %>%
@@ -253,8 +253,9 @@ color_cut <- diamond %>%
 ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
   geom_tile()+
   scale_fill_gradient(low="white",high="purple")+
-  geom_text(aes(label=Percentage), size = 3)+
-  theme(plot.title = element_text(hjust=0.5))+
+  geom_text(aes(label=Percentage), size = 2.5)+
+  theme(plot.title = element_text(hjust = 0.5, size = 8),
+        legend.title = element_text(size = 7)) +
   labs(x="Diamond Color by Cut",
        y="Color",
        title="Diamond Color by Cut") +
@@ -262,8 +263,9 @@ ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
 
 ```
 
+It seems that most of the diamond cuts are `Ideal` with proportion exceeding 50% each color grade. This suggests that `Ideal` cuts are the most common choice across colors. This not necessary mean that cut is less important than color. Rather, it's the more common choice regardless of color grade. This ties with how buyers would decide a balance between color and cut.
 
-```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center"}
 color_clarity <- diamond %>%
   count(color, clarity) %>%
   group_by(color) %>%
@@ -273,8 +275,9 @@ color_clarity <- diamond %>%
 ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
   geom_tile() +
   scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 3) +
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  theme(plot.title = element_text(hjust = 0.5, size = 8),
+        legend.title = element_text(size = 7)) +
   labs(
     x = "Diamond Color by Clarity",
     y = "Clarity",
@@ -283,7 +286,9 @@ ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) +
   theme_minimal()
 ```
 
-```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+Reviewing the heatmap, most diamonds are concentrated around `VS1`, `VS2`, and `SI1` across all color grades. The distribution across those clarity categories are fairly consistent with no trend. This indicates that clarity is not that important and people would buy a higher color grade diamond than a higher clarity grade. This suggests a trade-off between color and clarity rather than solely focusing on clarity. 
+
+```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center"}
 color_carat <- diamond %>%
   count(color, carat_bin) %>%
   group_by(color) %>%
@@ -293,8 +298,9 @@ color_carat <- diamond %>%
 ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
   geom_tile() +
   scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 3) +
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  theme(plot.title = element_text(hjust = 0.5, size = 8),
+        legend.title = element_text(size = 7)) + 
   labs(
     x = "Color",
     y = "Carat",
@@ -302,7 +308,10 @@ ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
   ) +
   theme_minimal()
 ```
-```{r heatmap-cut-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+
+The majority of the diamond are concentrated from the 0.25 to 0.75 carat range. This suggests that the carat weight are commonly around the carat range listed before. In the colorless category, it's seems buyers would decide a colorless diamond over a heavier carat, but some buyers may opt for a heavier diamond with a lower color grades. It's suggesting that people would want these factors does not work separately from each other, but rather they works together in pricing and selection. 
+
+```{r heatmap-cut-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center"}
 cut_carrat <- diamond %>%
   count(cut, carat_bin) %>%
   group_by(cut) %>%
@@ -312,8 +321,9 @@ cut_carrat <- diamond %>%
 ggplot(cut_carrat, aes(x = cut, y = carat_bin, fill = Percentage))+
   geom_tile() +
   scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 3) +
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  theme(plot.title = element_text(hjust = 0.5, size = 8),
+        legend.title = element_text(size = 7)) + 
   labs(
     x = "Cut",
     y = "Carat",
@@ -322,7 +332,9 @@ ggplot(cut_carrat, aes(x = cut, y = carat_bin, fill = Percentage))+
   theme_minimal()
 ```
 
-```{r heatmap-cut-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5, fig.height=2.5, fig.align="center"}
+In Figure \ref{ref:heatmap-cut-carat}, diamonds with carat weights below 1.5 are majority represented across all cut categories. This support the idea that carat weight is decided by buyer preference and budget considerations.In the earlier heatmap (Figure \ref{heatmap-color-cut}), `Very Good` cuts were more common, but here, `Ideal` and `Astor Ideal` cuts are more prevalent. This suggest that cut may be prioritzed over carat weight when making purchasing decision.  
+
+```{r heatmap-cut-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center"}
 clarity_cut <- diamond %>%
   count(cut, clarity) %>%
   group_by(cut) %>%
@@ -332,8 +344,9 @@ clarity_cut <- diamond %>%
 ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
   geom_tile() +
   scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 3) +
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  theme(plot.title = element_text(hjust = 0.5, size = 8),
+        legend.title = element_text(size = 7)) + 
   labs(
     x = "Cut",
     y = "Clarity",
@@ -342,7 +355,13 @@ ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
   theme_minimal()
 ```
 
+This heatmap shows that most diamond cuts fall within the mid-range clarity levels. This suggests that buyers who prorize a higher quality cut may also prefer a decent clarity grade. Overall, cut takes precedence over clarity in the process, since buyers are willing to accept a lower clarity grades if they get a higher quality cut. This reinforces the idea that cut is the most influential factor when choosing a diamond. 
 
 
 
+Reviewing all the bi-analysis done, we detmerine 
 
+- Carat is the important when deciding the price of the diamond. Buyers tend to choose a lower carat weight than a heaver carat if that means saving some extra money. 
+- Color is the second most important factors in the selection process.
+- Clarity is seems to be the less influential when selecting the diamond, as most buyers would choose a mid-level clarity grades.
+- Overall, the heatmap shows the influence on all 4Cs, suggesting buyers often trade-offs between them based on personal preferences and budget considerations.
