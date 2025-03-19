@@ -62,30 +62,32 @@ ClarityCarat<-carat_new_bins%>%
 
 ## Cut
 
-```{r cut-bar-plot, fig.width=4,fig.height=3,fig.align="center",echo=FALSE}
+```{r cut-bar-plot, fig.width=3,fig.height=2,fig.align="center",echo=FALSE, fig.cap = "Distribution of diamond counts by cut quality."}
 ggplot(diamond, aes(x=cut))+
-  geom_bar(fill="blue")+
-  theme(plot.title = element_text(hjust=0.5))+
+  geom_bar(fill = "deepskyblue3")+
   scale_y_continuous(breaks=seq(0,800,100))+
   labs(x="Cut", y="Count",
-       title="Diamond Cut Counts by Quality") + 
-  theme_minimal()
+       title="Diamond Cut Distribution") + 
+  theme_minimal() + 
+  theme(legend.position = "none")
 ```
 
 
 
 ## Color
-```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Distribution"}
-ggplot(diamond, aes(x=color, fill = color)) +
-  geom_bar() +
-  labs(title = "Distribution of Diamond Colors",
+```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Distribution of diamond counts by color grade"}
+ggplot(diamond, aes(x=color)) +
+  geom_bar(fill = "deepskyblue3") +
+  labs(title = "Diamond Color Distribution",
        x = "Color",
        y = " Count") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  theme_minimal() 
 ```
 
-```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Diamond Color Category visualize through a Pie Chart"}
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
+
+
+```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.pos = "H", fig.width=3, fig.height=2, fig.cap="Distribution of diamond counts by color groups"}
 
 diamond <- diamond %>%
   mutate(color_category = case_when(
@@ -105,12 +107,14 @@ ggplot(color_counts, aes(x="", y=n, fill=color_category)) +
        y = NULL,
        fill = "Color Category") + 
   theme_void()
-
 ```
+
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
+
 
 ## Clarity
 
-```{r, echo=FALSE, fig.width=4, fig.height=2, fig.align="center"}
+```{r clarity-bar-count, echo=FALSE, fig.width=4, fig.height=2, fig.cap = "Distribution of diamond counts by clarity grade"}
 # arrange clarity by rating
 clarity_ordered <- diamond %>%
   mutate(clarity = factor(clarity, levels = c("SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF", "FL"))) %>%
@@ -118,59 +122,43 @@ clarity_ordered <- diamond %>%
 
 # bar chart of counts and clarity grade
 ggplot(clarity_ordered, aes(x=clarity))+
-  geom_bar(fill = "blue")+
-  theme(axis.text.x = element_text(angle = 0), 
-        plot.title = element_text(hjust = 0.5))+
-  labs(x="Clarity Grade", y="Counts", title="Diamond Available Based on Clarity Grade") +
+  geom_bar(fill = "deepskyblue3")+
+  labs(x="Clarity Grade", y="Counts", title="Diamond Clarity Distribution") +
   theme_minimal()
 ```
 
-```{r, echo=FALSE, fig.width=4, fig.height=3, fig.align="center"}
-# generate frequency table
-clarity_frequency <- table(clarity_ordered$clarity)
-clarity_frequency <- t(as.data.frame(clarity_frequency))
-rownames(clarity_frequency) <- c("Clarity", "Frequency")
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
 
-# display frequency table
-kable(clarity_frequency, caption = "Frequency Table of Clarity Grades")
-```
-
-```{r echo=FALSE, message=FALSE, fig.width=5, fig.height=5, fig.align="center"}
-clarity_prop<-clarity_ordered %>%
-  group_by(clarity) %>%
-  summarize(counts=n())%>%
-  mutate(percent=counts/nrow(clarity_ordered))
-
-# bar chart of proportions of clarity grades
-ggplot(clarity_prop, aes(x = "", y = percent, fill = clarity)) +
-  geom_bar(stat = "identity", width = 1) +  
-  coord_polar(theta = "y") + 
-  labs(title = "Proportion of Clarity Grades Available") +
-  theme_void()  
-```
 
 ## Carat
-```{r carat-count-plot, warning=FALSE,message=FALSE,echo=FALSE,fig.width=5,fig.height=3, fig.cap="Diamond Carat Distribution",fig.align="center"}
+\
+```{r carat-count-plot, warning=FALSE,message=FALSE,echo=FALSE,fig.width=4,fig.height=2.5, fig.align = "center", fig.cap="Distribution of diamond counts by carat bins"}
 ggplot(diamond, aes(x = carat)) +
   geom_histogram(fill = "skyblue", color = "black", alpha = 1) + 
-  labs(title = "Diamond Carat Distribution",x = "Carat",y = "Count") +
+  labs(title = "Diamond Carat Distribution",x = "Carat",y = "Counts") +
   scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
   scale_y_continuous(labels = scales::comma) +
   theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
 
 ```
 
-```{r Table-Carat-Price, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.cap="Summary of Carat Proportion"}
+\
+
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
+
+\
+
+```{r Table-Carat-Price, message=FALSE, echo=FALSE, fig.width=4, fig.height=2, fig.cap="Summary of Carat Proportion"}
 
 carat_summary <- diamond %>%
   mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
   drop_na(carat_bin) %>%
   count(carat_bin) %>%
   mutate(proportions = round(n / sum(n), 3))
-kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"), 
+kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"),
       caption = "Summary of diamond by Carat Range") %>%
-  kable_styling(full_width = FALSE, position = "center") %>%
+  kable_styling(full_width = FALSE, position = "center", latex_options = c("HOLD_position", "striped")) %>%
   column_spec(1, width = "5cm") %>%
   column_spec(2, width = "3cm") %>%
   column_spec(3, width = "3cm")
@@ -178,12 +166,16 @@ kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"),
 ```
 
 
+\
 
 
 # Bivariate Analysis
 
 
-```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE, fig.width= 10, fig.height = 6}
+## Bivariate Analysis on Price
+\
+
+```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE, fig.width= 10, fig.height = 5.5, fig.cap = "Violin plots of diamond prices by cut, color, clarity, and carat bins"}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
   geom_violin() +
   labs(title = "Diamond Price by Cut",
@@ -230,8 +222,9 @@ g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) +
   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
 
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
 
-```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE, fig.width= 10, fig.height = 6}
+```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE, fig.width= 10, fig.height = 5.5, fig.cap = "Zoomed-in violin plots of diamond prices (\\$0 to \\$10,000) by cut, color, clarity, and carat bins"}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
   geom_violin() +
   scale_y_continuous(limits = c(0, 1))  +
@@ -281,6 +274,10 @@ g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) +
   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
 
+\
+
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.
+
 ```{r Scatter-Price,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
 ggplot(diamond, aes(x = carat, y = price)) +
   geom_point(color = "skyblue", alpha = 1) +
@@ -292,21 +289,9 @@ ggplot(diamond, aes(x = carat, y = price)) +
   
 ```
 
-```{r Box-Carat-Price, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=7, fig.height=3, fig.align="center",fig.cap="Box and whisker plot"}
-diamond <- diamonds 
-diamond <- diamond %>%
-  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE))
 
-ggplot(diamond, aes(x = carat_bin, y = price)) +
-  geom_boxplot(fill="skyblue") +
-  labs(title = "Diamond Prices by Carat Ranges",
-       x = "Carat",
-       y = "Price") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-```
 
-```{r echo=FALSE, message=FALSE}
+```{r clarity-min-max-prices, echo=FALSE, message=FALSE}
 min_max_prices <- clarity_ordered %>%
   group_by(clarity) %>%
   summarize(
@@ -509,17 +494,8 @@ cut_clarity2<-cut_clarity%>%
   summarise(avg_price=round(mean(price),0))%>%
   ungroup()
  
-# Heat maps for diamond cut by clarity
-B1<-ggplot(cut_clarity1,aes(x=clarity,y=cut,fill=Percentage))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="red")+
-  geom_text(aes(label=Percentage))+
-  labs(x="Diamond Clarity",y="Diamond Cut",
-       title="Diamond Cut by Clarity (Quantity)") +
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust=0.5))
 
-B2<-ggplot(cut_clarity2,aes(x=clarity,y=cut,fill=avg_price))+
+ggplot(cut_clarity2,aes(x=clarity,y=cut,fill=avg_price))+
   geom_tile()+
   scale_fill_gradient(low="white",high="red")+
   geom_text(aes(label=avg_price))+
@@ -528,7 +504,6 @@ B2<-ggplot(cut_clarity2,aes(x=clarity,y=cut,fill=avg_price))+
   theme_minimal()
   theme(plot.title = element_text(hjust=0.5))
 
-(B1)/(B2)
 ```
 
 
@@ -555,18 +530,8 @@ carat_clarity2<-carat_new_bins%>%
   summarise(avg_price=round(mean(price),0))%>%
   ungroup()
  
-# Heat maps for diamond carat by clarity
-C1<-ggplot(carat_clarity1,aes(x=carat_bin,y=clarity,fill=Percentage))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="red")+
-  geom_text(aes(label=Percentage))+
-  labs(x="Carat Bin",y="Clarity",
-       title="Diamond Carat by Clarity (Quantity)") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust=0.5))
 
-C2<-ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price))+
+ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price))+
   geom_tile()+
   scale_fill_gradient(low="white",high="red")+
   geom_text(aes(label=avg_price))+
@@ -576,10 +541,10 @@ C2<-ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         plot.title = element_text(hjust=0.5)) 
 
-(C1)/(C2)
+
 ```
 
-```{r echo=FALSE, message=FALSE}
+```{r heatmap-color-clarity-price, echo=FALSE, message=FALSE}
 # compare color and clarity by count 
 color_clarity1 <- clarity_ordered %>%
   count(color, clarity) %>%
@@ -592,20 +557,8 @@ color_clarity2 <- clarity_ordered%>%
   summarise(avg_price=round(mean(price),0))%>%
   ungroup()
 
-# Heat maps for diamond color by clarity
-D1<-ggplot(color_clarity1, aes(x = clarity, y = color, fill = Percentage)) + 
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  geom_text(aes(label = Percentage), size = 3) +
-  labs(
-    x = "Clarity",
-    y = "Color",
-    title = "Diamond Color by Clarity"
-  )  + 
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5)) 
 
-D2<-ggplot(color_clarity2,aes(x=clarity,y=color,fill=avg_price))+
+ggplot(color_clarity2,aes(x=clarity,y=color,fill=avg_price))+
   geom_tile()+
   scale_fill_gradient(low="white",high="red")+
   geom_text(aes(label=avg_price))+
@@ -615,7 +568,6 @@ D2<-ggplot(color_clarity2,aes(x=clarity,y=color,fill=avg_price))+
   theme(plot.title = element_text(hjust=0.5))
 
 
-(D1)/(D2)
 ```
 
 ```{r Graph Combo,fig.width=12, fig.height=10, echo=FALSE}
@@ -652,9 +604,9 @@ A3<-ggplot(ClarityCarat,aes(x=carat_bin,y=clarity,fill=Ave_Price))+
 ```
 
 ```{r Kable Table, echo=FALSE}
-Full_Tab%>%
-   kbl(format="latex",booktabs = TRUE,caption="\\textbf{Clarity/Color/Cut Max-Min Ave Price Range per Carat Bin}")%>%
-kable_styling(latex_options = c("striped", "HOLD_position"))
+Full_Tab %>%
+   kbl(format = "latex", booktabs = TRUE, caption = "Clarity/Color/Cut Max-Min Ave Price Range per Carat Bin") %>%
+   kable_styling(latex_options = c("HOLD_position", "striped"))
 ```
 
 # Simple Linear Regression
@@ -676,6 +628,22 @@ kable(carat_price_summary2, col.names = c("Carat Range", "Min Price", "Max Price
   column_spec(3, width = "3cm")
 ```
 
+```{r Residual_Plot, message=FALSE, echo=FALSE,fig.width=5, fig.height=4,fig.align="center",fig.cap="Residuals plot"}
+model_carat <- lm(price ~ carat, diamond)
+par(mfrow = c(2,2))
+plot(model_carat)
+residuals_model <- residuals(model_carat)
+```
+
+```{r ACF_plot, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model"}
+residuals_model <- residuals(model_carat)
+acf(residuals_model)
+```
+
+```{r Box_cox_j, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="BoxCox Model"}
+boxcox(model_carat)
+```
+
 ```{r Residual_Plot_Trans, message=FALSE, fig.width=7, fig.height=3.7,echo=FALSE,fig.align="center",fig.cap="Residuals plot"}
 diamond$price_sqrt <- sqrt(diamond$price)
 model_carat_sqrt <- lm(price_sqrt ~ carat, diamond)
@@ -685,7 +653,16 @@ par(mfrow = c(2, 2))
 plot(model_carat_sqrt)
 ```
 
-```{r ACF_plot_tran, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.cap="ACF Residual Model"}
+
+
+```{r ACF_plot_tran, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model"}
 residuals_model_sq <- residuals(model_carat_sqrt)
 acf(residuals_model_sq)
+```
+
+```{r Summary, warning=FALSE, message=FALSE, echo = FALSE}
+
+print(summary(model_carat_sqrt))
+
+
 ```
