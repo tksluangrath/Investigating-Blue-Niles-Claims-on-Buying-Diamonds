@@ -1,11 +1,16 @@
 ---
-title: "code_chunk_order"
+title: "Investigating Blue Nile's Claim on Buying Diamonds"
+author: "Humaid Billoo, Katie A. Dunning, Terrance K. Luangrath, Kristina V. Quintana"
 output: 
   bookdown::html_document2
-date: "2025-03-19"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
 ---
 
-# Setup 
+# Introduction
+
+# Claim
+
+# Data Description
 
 ```{r libraries-dataset, message=FALSE, echo=FALSE, output=FALSE, warning=FALSE}
 rm(list = ls())
@@ -31,9 +36,9 @@ diamond<-diamond%>%
 
 diamond <- diamond %>%
   mutate(carat_bin = cut(carat,
-                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
-                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5", max(carat), sep="-")),
-                         right = FALSE)) %>%
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 8),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", "5-8")),
+                         right = FALSE) %>%
   drop_na(carat) 
 
 carat_new_bins <- diamond %>%
@@ -57,18 +62,23 @@ ClarityCarat<-carat_new_bins%>%
   group_by(clarity,carat_bin)%>%
   summarise(Ave_Price=round(mean(price),0))%>%
   ungroup()
+
+CutColor<- carat_new_bins %>%
+  group_by(cut,color)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
 ```
 
 
-# Univariate
+# Univariate Analysis
 
 ## Cut
 
 ```{r cut-bar-plot, fig.width=3,fig.height=2,fig.align="center",echo=FALSE, fig.cap = "Distribution of diamond counts by cut quality."}
 ggplot(diamond, aes(x=cut))+
-  geom_bar(fill = "deepskyblue3")+
+  geom_bar(fill = "deepskyblue3", color ="black")+
   scale_y_continuous(breaks=seq(0,800,100))+
-  labs(x="Cut", y="Count",
+  labs(x="Cut", y="Counts",
        title="Diamond Cut Distribution") + 
   theme_minimal() + 
   theme(legend.position = "none")
@@ -79,10 +89,10 @@ ggplot(diamond, aes(x=cut))+
 ## Color
 ```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.align="center",fig.cap="Distribution of diamond counts by color grade"}
 ggplot(diamond, aes(x=color)) +
-  geom_bar(fill = "deepskyblue3") +
+  geom_bar(fill = "deepskyblue3", color ="black") +
   labs(title = "Diamond Color Distribution",
        x = "Color",
-       y = " Count") +
+       y = " Counts") +
   theme_minimal() 
 ```
 
@@ -102,7 +112,7 @@ color_counts <- diamond %>%
   count(color_category)
 
 ggplot(color_counts, aes(x="", y=n, fill=color_category)) + 
-  geom_bar(stat="identity", width=1) + 
+  geom_bar(stat="identity", width=1, color="black") + 
   coord_polar("y", start=0) + 
   labs(title = "Distribution of Diamond Color Groups",
        x = NULL,
@@ -124,7 +134,7 @@ clarity_ordered <- diamond %>%
 
 # bar chart of counts and clarity grade
 ggplot(clarity_ordered, aes(x=clarity))+
-  geom_bar(fill = "deepskyblue3")+
+  geom_bar(fill = "deepskyblue3", color = "black")+
   labs(x="Clarity Grade", y="Counts", title="Diamond Clarity Distribution") +
   theme_minimal()
 ```
@@ -136,7 +146,7 @@ A random paragraph can also be an excellent way for a writer to tackle writers' 
 
 ```{r carat-count-plot, warning=FALSE,message=FALSE,echo=FALSE,fig.width=4,fig.height=2.5, fig.align = "center", fig.cap="Distribution of diamond counts by carat bins"}
 ggplot(diamond, aes(x = carat)) +
-  geom_histogram(fill = "skyblue", color = "black", alpha = 1) + 
+  geom_histogram(fill = "deepskyblue3", color = "black") + 
   labs(title = "Diamond Carat Distribution",x = "Carat",y = "Counts") +
   scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
   scale_y_continuous(labels = scales::comma) +
@@ -155,7 +165,7 @@ carat_summary <- diamond %>%
   drop_na(carat_bin) %>%
   count(carat_bin) %>%
   mutate(proportions = round(n / sum(n), 3))
-kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"),
+kable(carat_summary, col.names = c("Carat Range", "Counts", "Proportion"),
       caption = "Summary of diamond by Carat Range") %>%
   kable_styling(full_width = FALSE, position = "center", latex_options = c("HOLD_position", "striped")) %>%
   column_spec(1, width = "5cm") %>%
@@ -167,9 +177,11 @@ kable(carat_summary, col.names = c("Carat Range", "Count", "Proportion"),
 
 # Bivariate Analysis
 
+## Bivariate Anlaysis on Price
 
-## Bivariate Analysis on Price
+-- General Introduction -- 
 
+## Violin Plots of Price Distributions
 
 ```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE, fig.width= 10, fig.height = 5.5, fig.cap = "Violin plots of diamond prices by cut, color, clarity, and carat bins"}
 g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
@@ -340,12 +352,294 @@ cut_tab_calc<-cut_Full_Tab%>%
 
 Full_Tab<-bind_cols(cut_tab_calc,color_tab_calc,clarity_tab_calc)
 ```
-## Bivariate analysis on 4Cs
 
 
 
+## Carat vs Clarity: Proportion and Price Analysis
 
-```{r clarity and cut heat maps, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Cut Distribution by Clarity Grade  (Average Price Breakdown)"}
+
+```{r clarity-and-carat-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap = "Diamond Carat Bin vs Clarity: Proportion and Price Heatmaps"}
+# new dataframe with carat new bins and clarity ordered
+# new dataframe with carat new bins and clarity ordered
+carat_new_bins <- clarity_ordered %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 8),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", "5-8"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+# compare carat and clarity by count 
+carat_clarity1<-carat_new_bins%>%
+  count(carat_bin,clarity)%>%
+  group_by(carat_bin)%>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare carat and clarity by price
+carat_clarity2<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+ 
+# Heat maps for diamond carat by clarity
+a1 <-ggplot(carat_clarity1,aes(x=carat_bin,y=clarity,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red") +
+  geom_text(aes(label = Percentage), size = 2.5)+
+  labs(x="Carat Bin",
+       y="Clarity",
+       title="Quantity",
+       fill = "Percentage (%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+a2 <- ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  geom_text(aes(label = round(avg_price/1000,2)), size = 2.5) +
+  labs(x="Carat Bin",y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+a1/a2 + 
+  plot_annotation(title = "Diamond Carat Bin vs Clarity Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+## Carat vs Cut: Proportion and Price Analysis
+
+```{r carat-cut-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Carat Bin vs Cut: Proportion and Price Heatmaps"}
+b1 <- ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="blue")+
+  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
+  labs(x="Carat Bin",
+       y="Cut",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+cut_carrat <- diamond %>%
+  count(cut, carat_bin) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+b2 <- ggplot(cut_carrat, aes(x = carat_bin, y = cut, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Carat Bin",
+    y = "Cut",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+
+b2/b1 + 
+  plot_annotation(title = "Diamond Carat vs Cut Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+## Color vs Carat: Proportion and Price Analysis
+
+```{r color-carat-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Color vs Carat Bin: Proportion and Price Heatmaps"}
+c1 <- ggplot(ColorCarat,aes(x=color,y=carat_bin,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="darkgreen")+
+  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
+  labs(x="Color",
+       y="Carat Bin",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+color_carat <- diamond %>%
+  count(color, carat_bin) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+c2 <- ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "darkgreen") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Color",
+    y = "Carat Bin",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+c2/c1 + 
+  plot_annotation(title = "Diamond Color vs Carat Bin Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+
+## Cut vs Color: Proportion and Price Analysis
+
+```{r color-cut-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Cut vs Color: Proportion and Price Heatmaps"}
+color_cut <- diamond %>%
+  count(cut,color) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+d1 <- ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=Percentage), size = 2.5)+
+  labs(
+    x = "Cut",
+    y = "Color",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+d2 <- ggplot(CutColor, aes(x=cut,y=color,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=round(Ave_Price/1000,2)), size = 2.5)+
+  labs(x="Cut",
+       y="Color",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+d1/d2 + 
+  plot_annotation(title = "Diamond Cut vs Color Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+## Color vs Clarity: Proportion and Price Analysis
+
+```{r color-clarity-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Clarity vs Color: Proportion and Price Heatmaps"}
+color_clarity <- diamond %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+e1 <- ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "brown4") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Color",
+    y = "Clarity",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+# compare color and clarity by count 
+color_clarity1 <- clarity_ordered %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare color and clarity by price 
+color_clarity2 <- clarity_ordered%>%
+  group_by(color,clarity)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+
+
+e2 <- ggplot(color_clarity2,aes(x=color,y=clarity,fill=avg_price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="brown4")+
+  geom_text(aes(label=round(avg_price/1000, 2)), size = 2.5) +
+  labs(x="Color",
+       y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+e1/e2 + 
+  plot_annotation(title = "Diamond Clarity vs Color Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+## Clarity vs Color: Proportion and Price Analysis
+
+
+```{r cut-clarity-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Clarity vs Color: Proportion and Price Heatmaps"}
+clarity_cut <- diamond %>%
+  count(cut, clarity) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+f1 <- ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "orange3") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Cut",
+    y = "Clarity",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
 
 # new dataframe with cut and clarity ordered 
 cut_clarity<-diamond%>%
@@ -367,234 +661,36 @@ cut_clarity2<-cut_clarity%>%
   ungroup()
  
 
-ggplot(cut_clarity2,aes(x=clarity,y=cut,fill=avg_price))+
+f2 <- ggplot(cut_clarity2,aes(x=cut,y=clarity,fill=avg_price/1000))+
   geom_tile()+
-  scale_fill_gradient(low="white",high="red", 
-                      name = "Average Price ($)") +
-  geom_text(aes(label = avg_price), size = 2.5) +
-  labs(x="Diamond Clarity",y="Diamond Cut",
-       title="Diamond Cut by Clarity (Average Price in Dollars)") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust=0.5))
-
-```
-
-
-
-```{r clarity-and-carat-heat-maps, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Clarity Distribution by Carat Bin (Average Price Breakdown)"}
-# new dataframe with carat new bins and clarity ordered
-carat_new_bins <- clarity_ordered %>%
-  drop_na(carat) %>%
-  mutate(carat_bin = cut(carat,
-                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, max(carat)),
-                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", paste("5",max(carat),sep="-")),
-                         right = FALSE)) %>%
-  drop_na(carat_bin)
-
-# compare carat and clarity by count 
-carat_clarity1<-carat_new_bins%>%
-  count(carat_bin,clarity)%>%
-  group_by(carat_bin)%>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-# compare carat and clarity by price
-carat_clarity2<-carat_new_bins%>%
-  group_by(clarity,carat_bin)%>%
-  summarise(avg_price=round(mean(price),0))%>%
-  ungroup()
- 
-
-ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="red",
-                      name = "Average Price ($)")+
-  geom_text(aes(label = avg_price), size = 2.5) +
-  labs(x="Carat Bin",y="Clarity",
-       title="Diamond Clarity by Carat Bin (Average Price in Dollars)") +
+  scale_fill_gradient(low="white",high="orange3") +
+  geom_text(aes(label = round(avg_price/1000, 2)), size = 2.5) +
+  labs(x="Cut",
+       y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust=0.5)) 
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
 
 
-```
-
-```{r heatmap-color-clarity-price, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Color Distribution by Clarity Grade  (Average Price Breakdown)"}
-# compare color and clarity by count 
-color_clarity1 <- clarity_ordered %>%
-  count(color, clarity) %>%
-  group_by(color) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-# compare color and clarity by price 
-color_clarity2 <- clarity_ordered%>%
-  group_by(color,clarity)%>%
-  summarise(avg_price=round(mean(price),0))%>%
-  ungroup()
-
-
-ggplot(color_clarity2,aes(x=clarity,y=color,fill=avg_price))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="red")+
-  geom_text(aes(label=round(avg_price/1000, 2)), size = 2.5) +
-  labs(x="Clarity",y="Color",
-       title="Diamond Color by Clarity (Average Price in Dollars)") + 
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust=0.5))
-
-
-```
-
-```{r, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center"}
-ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price/1000))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="blue")+
-  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
-  labs(x="Carat Bin",y="Cut",
-       title="Diamond Cut by Carat Range") +
-  theme_minimal() + 
-  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))
-```
-
-```{r, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center"}
-ggplot(ColorCarat,aes(x=carat_bin,y=color,fill=Ave_Price/1000))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="orange")+
-  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
-  labs(x="Carat Bin",y="Color",
-       title="Diamond Color by Carat Range") + 
-  theme_minimal() + 
-  theme(axis.text.x=element_text(angle=45), 
-        plot.title = element_text(hjust=0.5))
-
-```
-
-```{r, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=5.5, fig.height=2.5, fig.align="center"}
-ggplot(ClarityCarat,aes(x=carat_bin,y=clarity,fill=Ave_Price))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="pink")+
-  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
-  labs(x="Carat Bin",y="Clarity",
-       title="Diamond Clarity by Carat Range") +
-  theme_minimal() + 
-  theme(axis.text.x=element_text(angle=45), plot.title = element_text(hjust=0.5))
-```
-
-```{r Kable Table, echo=FALSE}
-# Full_Tab %>%
-#    kbl(format = "latex", booktabs = TRUE, caption = "Clarity/Color/Cut Max-Min Ave Price Range per Carat Bin") %>%
-#    kable_styling(latex_options = c("HOLD_position", "striped"))
-```
-
-
-```{r heatmap-color-cut, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap="Heatmap of Diamond Color Distribution by Cut Quality (Percentage Breakdown)"}
-color_cut <- diamond %>%
-  count(cut,color) %>%
-  group_by(color) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-
-ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
-  geom_tile()+
-  scale_fill_gradient(low="white",high="purple")+
-  geom_text(aes(label=Percentage), size = 2.5)+
-  theme(plot.title = element_text(hjust = 0.5, size = 8),
-        legend.title = element_text(size = 7)) +
-  labs(x="Diamond Color by Cut",
-       y="Color",
-       title="Diamond Color by Cut") +
-  theme_minimal()
-
-```
-
-```{r heatmap-color-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Color Distribution by Clarity Grade (Percentage Breakdown)"}
-color_clarity <- diamond %>%
-  count(color, clarity) %>%
-  group_by(color) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-
-ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 2.5) +
-  theme(plot.title = element_text(hjust = 0.5, size = 8),
-        legend.title = element_text(size = 7)) +
-  labs(
-    x = "Diamond Color by Clarity",
-    y = "Clarity",
-    title = "Diamond Color by Clarity"
-  ) +
-  theme_minimal()
-```
-
-```{r heatmap-color-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Carat Distribution by Color Grade (Percentage Breakdown)"}
-color_carat <- diamond %>%
-  count(color, carat_bin) %>%
-  group_by(color) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-  
-ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 2.5) +
-  theme(plot.title = element_text(hjust = 0.5, size = 8),
-        legend.title = element_text(size = 7)) + 
-  labs(
-    x = "Color",
-    y = "Carat",
-    title = "Diamond Color by Carat"
-  ) +
-  theme_minimal()
-```
-
-```{r heatmap-cut-carat, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Cut Distribution by Carat Bin (Percentage Breakdown)"}
-cut_carrat <- diamond %>%
-  count(cut, carat_bin) %>%
-  group_by(cut) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-  
-ggplot(cut_carrat, aes(x = cut, y = carat_bin, fill = Percentage))+
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 2.5) +
-  theme(plot.title = element_text(hjust = 0.5, size = 8),
-        legend.title = element_text(size = 7)) + 
-  labs(
-    x = "Cut",
-    y = "Carat",
-    title = "Diamond Cut by Carat"
-  ) +
-  theme_minimal()
-```
-
-```{r heatmap-cut-clarity, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=5.5, fig.height=2.5, fig.align="center", fig.cap = "Heatmap of Diamond Clarity Distribution by Cut Quality  (Percentage Breakdown)"}
-clarity_cut <- diamond %>%
-  count(cut, clarity) %>%
-  group_by(cut) %>%
-  mutate(Percentage= round(n/sum(n)*100,2))
-
-  
-ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "purple") +
-  geom_text(aes(label = Percentage), size = 2.5) +
-  theme(plot.title = element_text(hjust = 0.5, size = 8),
-        legend.title = element_text(size = 7)) + 
-  labs(
-    x = "Cut",
-    y = "Clarity",
-    title = "Diamond Cut by Clarity"
-  ) +
-  theme_minimal()
+f1/f2 + 
+  plot_annotation(title = "Diamond Cut vs Clarity Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
 ```
 
 
 
-# Simple Linear Regression
 
-```{r Scatter-Price,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
+
+# Simple Linear Regression Modeling: Diamond Price vs Carat
+
+```{r Scatter-Price,message=FALSE,echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
 ggplot(diamond, aes(x = carat, y = price)) +
   geom_point(color = "skyblue", alpha = 1) +
   labs(title = "Diamond Price vs Carat",x = "Carat",y = "Price") +
@@ -604,7 +700,7 @@ ggplot(diamond, aes(x = carat, y = price)) +
   
 ```
 
-```{r Table-Carat-Price-Var, warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=3,fig.align="center",fig.cap="Carat Price Variability"}
+```{r Table-Carat-Price-Var, warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=3,fig.align="center",fig.cap="Carat Price Variability"}
 carat_price_summary2 <- diamond %>%
   mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
   group_by(carat_bin) %>%
@@ -621,23 +717,25 @@ kable(carat_price_summary2, col.names = c("Carat Range", "Min Price", "Max Price
   column_spec(3, width = "3cm")
 ```
 
-```{r Residual_Plot, message=FALSE, echo=FALSE,fig.width=7, fig.height=4,fig.align="center",fig.cap="Residuals plot"}
+
+
+```{r Residual-Plot, message=FALSE, echo=FALSE,fig.width=7, fig.height=4,fig.align="center",fig.cap="Residuals plot"}
 model_carat <- lm(price ~ carat, diamond)
 par(mfrow = c(2,2))
 plot(model_carat)
 residuals_model <- residuals(model_carat)
 ```
 
-```{r ACF_plot, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model"}
+```{r ACF-plot, message=FALSE, echo=FALSE,fig.width=4, fig.height=3,fig.align="center",fig.cap="ACF Residual Model"}
 residuals_model <- residuals(model_carat)
 acf(residuals_model)
 ```
 
-```{r Box_cox_j, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="Box-Cox Model"}
+```{r Box-Cox, message=FALSE, echo=FALSE,fig.width=4, fig.height=3,fig.align="center",fig.cap="Box-Cox Transformation Plot for the Diamond Price vs Carat Model"}
 boxcox(model_carat)
 ```
 
-```{r Residual_Plot_Trans, message=FALSE, fig.width=7, fig.height=4,echo=FALSE,fig.align="center",fig.cap="Residuals plot"}
+```{r Residual-Plot-Trans, message=FALSE, fig.width=7, fig.height=4,echo=FALSE,fig.align="center",fig.cap="Residuals plot"}
 diamond$price_sqrt <- sqrt(diamond$price)
 model_carat_sqrt <- lm(price_sqrt ~ carat, diamond)
 
@@ -648,19 +746,21 @@ plot(model_carat_sqrt)
 
 
 
-```{r ACF_plot_tran, message=FALSE, echo=FALSE,fig.width=6, fig.height=4,fig.align="center",fig.cap="ACF Residual Model after Square Root Transformation "}
+```{r ACF-plot-tran, message=FALSE, echo=FALSE,fig.width=4, fig.height=3,fig.align="center",fig.cap="ACF Residual Model after Square Root Transformation "}
 residuals_model_sq <- residuals(model_carat_sqrt)
 acf(residuals_model_sq)
 ```
 
-```{r Summary, warning=FALSE, message=FALSE, echo = FALSE, fig.align='center'}
+```{r Summary, warning=FALSE, message=FALSE, echo = FALSE, fig.align='center', fig.height=3, fig.width = 3}
 print(summary(model_carat_sqrt))
 ```
 
-```{r Scatter-Price-post,message=FALSE,echo=FALSE, fig.width=6, fig.height=4, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
+```{r Scatter-Price-post,message=FALSE,echo=FALSE, fig.width=4, fig.height=3, fig.cap="Scatterplot of Carat vs Square Root of Price (after square root transformation) with fitted linear model",fig.align="center"}
 ggplot(diamond, aes(x = carat, y = price_sqrt)) +
   geom_point(color = "skyblue", alpha = 1) +
-  labs(title = "Diamond Square Root Price vs Carat",x = "Carat",y = "Square Root Price") +
+  labs(title = "Diamond Carat vs Square Root of Price",
+       x = "Carat",
+       y = "Square Root of Price") +
   geom_smooth(method = "lm", color = "blue") +
   scale_y_continuous(labels = scales::comma) +
   theme_minimal()
