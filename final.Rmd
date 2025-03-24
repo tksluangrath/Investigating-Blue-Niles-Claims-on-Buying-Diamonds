@@ -1,0 +1,923 @@
+---
+title: "Investigating Blue Nile's Claim on Buying Diamonds"
+author: "Humaid Billoo, Katie A. Dunning, Terrance K. Luangrath, Kristina V. Quintana"
+output: 
+  bookdown::html_document2
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+---
+
+<style>
+  body {
+    font-size: 11pt;
+  }
+</style>
+
+# Abstract
+
+An analysis was conducted for Blue Nile, a diamond retailer, utilizing 1214 diamonds from their stock.  This analysis focuses on how the 4Cs (carat, cut, color, and clarity) interact with each other to address Blue Nile’s claims posted on their website regarding their importance in determining the “best” diamond, which is a diamond that appears high quality without the higher price tag, reflected by their diamond stock. The Blue Nile claims that carat is the main driver for price, and that the most important of the 4Cs regarding diamond appearance is cut, followed by color, then clarity. To appropriately analyze the retailer’s claims, the analysis looks at how the 4Cs influence stock quantity and price. 
+
+Cut refers to a diamond’s proportion, faceting, and dimensions. The sample set contains, in ascending quality, 73 Good, 382 Very Good, 739 Ideal, and 20 Astor Ideal cuts. Color measures how colorless a diamond is. The sample set contains, in descending quality order, grades D to J, with each grade carrying between 150 and 200 diamonds, except grade J, which contains around 100 diamonds. Clarity refers to a diamond’s imperfections or characteristics. There are eight quality grades with two subcategories per grade, ranging from SI2-SI1 (slightly included) to IF-FL (Internally Flawless-Flawless), with each subcategory containing approximately 150 to 250 diamonds, except for the IF and FL grades which contain 49 and 3 diamonds, respectively. Carat refers to the weight of the diamond. Out of the 1214 diamonds, 880 weigh below 1.0 carat and 198 diamonds weigh between 1.0 and 1.5 carats. 
+
+By using visuals to compare the 4Cs to each other and price, certain conclusions could be drawn to support Blue Nile’s claims. The majority of the diamond stock features an Ideal cut, regardless of color, highlighting the importance of diamond cut. The clarity distribution was relatively even across all clarity grades, indicating that clarity is not as important as color is in diamond appearance. Additionally, when comparing clarity to cut, the data reveals that consumers tend to prioritize better cuts over higher clarity. The distribution of cut and color is relatively consistent across the carat ranges of 0.25 to 1.5 carats, with some gaps seen in the 0.75 to 1.0 carat range. This supports that carat is more of a personal preference for buyers. The patterns observed in the quantity of diamond stock likely reflect consumer buying habits with cut being the most important, followed by color, then clarity, and carat being a matter of preference in diamond selection.  
+
+ 	The data analysis on price tells a different story. Graphs comparing the data revealed that Very Good cuts outperformed the Ideal cuts in price, suggesting that it is important in diamond appearance, but not in determining the price. As expected, the analysis on color revealed that colorless diamonds are worth more than near-colorless diamonds, suggesting that diamond color plays a bigger role in diamond price. When looking closer at clarity, most categories had similar prices, suggesting that clarity is not very important in price determination. Since carat weight is numerical, its relationship with price was analyzed using a graph which revealed a clear linear relationship after some mathematical alterations. Carat weight accounts for 89.59% of price variation, suggesting that around 10% of the price difference can be explained by the other three Cs.  A table for maximum and minimum average price ranges for carat against the other Cs helped establish a ranking of price influence. Carat remains the most important, due to the driving price for diamonds under 0.75 carats, which accounts for 67% of the data.  
+
+The data supports Blue Nile’s claims that cut, color, and clarity play an important role in diamond appearance in that order, and that carat has the biggest influence on price, followed by color. Furthermore, these findings can back up Blue Nile’s recommendations on the “best” diamond. 
+
+# Introduction
+
+
+Blue Nile is primarily an online diamond retailer that provides education on buying diamonds. Their website focuses on the 4Cs of diamonds: cut, color, clarity, and carat. These elements are considered when grading diamonds since they impact a diamond’s beauty and price. Blue Nile makes claims regarding the order of importance of the 4Cs when selecting the ‘best’ diamond. An analysis will be performed to explore the relationship between the 4Cs and price to address these claims. 
+
+# Main Claim
+
+Blue Nile claims that the “best” diamonds are the ones that appear of highest quality without the high price tag. They specify that rarer diamonds are more expensive and that typically, the higher-ranking diamonds cost more. This implies that these diamonds do not necessarily rank the highest in their categories nor are they the most expensive. Additionally, since the “best” diamonds are considered the ones consumers should select, Blue Nile should have more of them in stock.  
+
+The Blue Nile website claims that cut is considered the most important factor in selecting the “best” diamond, implying that it prioritizes having higher-quality cuts. Diamond color is the second most important of the 4Cs in diamond selection and influences price since higher-rated colors are rarer. Clarity is considered a less important element since a diamond’s flaws can be masked or unseen due to other factors, but in general, diamonds with higher clarity ratings are reflected in higher prices. Carat has the biggest effect on price since heavier diamonds are rarer, so Blue Nile recommends splurging on cut to maximize sparkle among smaller carat diamonds. For this reason, carat is not necessarily ranked but is more of a consumer preference.  
+
+# Data Description
+
+The dataset, `diamonds4.csv`, contains 5 variables that describe more than 1000 different diamonds for sale.  
+ 
+- Cut: Describes the proportion, dimensions, and faceting of a diamond. Higher grade cuts are more symmetrical and have better light performance. 
+- Color: Describes how colorless a diamond is. More colorless diamonds receive a higher color rating. 
+- Clarity: Quantifies and specifies diamond flaws, such as blemishes and inclusions. Less visible flaws receive a higher clarity rating. 
+- Carat: Measures a diamond’s weight, not its size. Heavier diamonds receive a higher cut rating. 
+- Price: the price value of the diamond in USD 
+
+```{r libraries-dataset, message=FALSE, echo=FALSE, output=FALSE, warning=FALSE}
+rm(list = ls())
+library(tidyverse)
+library(MASS)
+library(patchwork)
+library(kableExtra)
+library(knitr)
+library(scales)
+
+
+diamond <- read.csv("diamonds4.csv")
+```
+
+```{r sort-label, echo=FALSE, output=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+diamond<-diamond%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))%>%
+  mutate(color=color%>%
+           fct_relevel(c("J","I","H","G","F","E","D")))
+
+diamond <- diamond %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 8),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", "5-8")),
+                         right = FALSE) %>%
+  drop_na(carat) 
+
+carat_new_bins <- diamond %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 8),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", "5-8"),
+                         right = FALSE))
+
+CutCarat<-carat_new_bins%>%
+  group_by(cut,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ColorCarat<-carat_new_bins%>%
+  group_by(color,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+ClarityCarat<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+
+CutColor<- carat_new_bins %>%
+  group_by(cut,color)%>%
+  summarise(Ave_Price=round(mean(price),0))%>%
+  ungroup()
+```
+
+```{r Table comb short tab, echo=FALSE}
+cut_Min_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Cut=Ave_Price)%>%
+  mutate(Min_Cut=min(Ave_Price_Cut))%>%
+  filter(Ave_Price_Cut==Min_Cut)
+
+cut_Max_Tab<-CutCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Cut=Ave_Price)%>%
+  mutate(Max_Cut=max(Ave_Price_Cut))%>%
+  filter(Ave_Price_Cut==Max_Cut)
+
+color_Min_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Color=Ave_Price)%>%
+  mutate(Min_Color=min(Ave_Price_Color))%>%
+  filter(Ave_Price_Color==Min_Color)
+
+color_Max_Tab<-ColorCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Color=Ave_Price)%>%
+  mutate(Max_Color=max(Ave_Price_Color))%>%
+  filter(Ave_Price_Color==Max_Color)
+
+clarity_Min_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Clar=Ave_Price)%>%
+  mutate(Min_Clar=min(Ave_Price_Clar))%>%
+  filter(Ave_Price_Clar==Min_Clar)
+
+clarity_Max_Tab<-ClarityCarat%>%
+  group_by(carat_bin)%>%
+  rename(Ave_Price_Clar=Ave_Price)%>%
+  mutate(Max_Clar=max(Ave_Price_Clar))%>%
+  filter(Ave_Price_Clar==Max_Clar)
+
+clarity_Full_Tab<-bind_rows(clarity_Min_Tab,clarity_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Clar)
+
+color_Full_Tab<-bind_rows(color_Min_Tab,color_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Color)
+
+cut_Full_Tab<-bind_rows(cut_Min_Tab,cut_Max_Tab)%>%
+  arrange(carat_bin,Ave_Price_Cut)
+
+clarity_tab_calc<-clarity_Full_Tab%>%
+  group_by(carat_bin)%>%
+  summarize(Price_Rng_Clar=max(Ave_Price_Clar)-min(Ave_Price_Clar))%>%
+  dplyr::select(Price_Rng_Clar)
+
+color_tab_calc<-color_Full_Tab%>%
+  group_by(carat_bin)%>%
+  summarize(Price_Rng_Color=max(Ave_Price_Color)-min(Ave_Price_Color))%>%
+  dplyr::select(Price_Rng_Color)
+
+cut_tab_calc<-cut_Full_Tab%>%
+  group_by(carat_bin)%>%
+  summarize(Price_Rng_Cut=max(Ave_Price_Cut)-min(Ave_Price_Cut))%>%
+  dplyr::select(carat_bin,Price_Rng_Cut)
+
+Full_Tab<-bind_cols(cut_tab_calc,color_tab_calc,clarity_tab_calc)
+```
+
+# Univariate Analysis
+
+## Cut
+
+The cuts of a diamond are descriptive of the quality of the gem’s faceting, proportion, and polish, as well as how symmetrical the piece is. The cuts are categorized as Good, Very Good, Ideal, and Astor Ideal. Diamonds in the Good category represent the top 25% of diamond cut quality, while Very Good diamonds are in the top 15%, and Ideal diamonds are in the top 3%. Diamonds in the Astor by Blue Nile category are marketed as having the ability to “reflect the most light possible” and are graded/certified by several third parties. 
+
+```{r cut-bar-plot, fig.width=3,fig.height=2,fig.align="center",echo=FALSE, fig.cap = "Distribution of diamond counts by cut quality."}
+ggplot(diamond, aes(x=cut))+
+  geom_bar(fill = "deepskyblue3", color ="black")+
+  scale_y_continuous(breaks=seq(0,800,100))+
+  labs(x="Cut", y="Counts",
+       title="Diamond Cut Distribution") + 
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
+
+Looking at Figure 5.1, the distribution of cuts shows a significant skew in the available quantities. There are vastly more Ideal cuts (739) and Very Good cuts (382) compared to the Good cuts (73) and the Astor Ideal cuts (20).  
+
+## Color
+
+Diamond colors are classified into three main categories and further graded from ranges D (colorless) to K (faintly colored).
+
+- Colorless diamonds: D, E, F Color Diamonds
+- Near-colorless diamonds: G, H, I, J Color Diamonds
+- Faint color diamonds: K Color Diamonds
+
+```{r color-count-plot, message=FALSE, echo=FALSE, fig.width=3, fig.height=2, fig.align="center",fig.cap="Distribution of diamond counts by color grade"}
+ggplot(diamond, aes(x=color)) +
+  geom_bar(fill = "deepskyblue3", color ="black") +
+  labs(title = "Diamond Color Distribution",
+       x = "Color",
+       y = " Counts") +
+  theme_minimal() 
+```
+
+Looking at Figure 5.2, the distribution of diamond color appears fairly consistent, with 	counts ranging between 150 to 200 for most color grades. However, the color J seems to have around 100 diamonds in the dataset. Each diamond color falls into either the Colorless or Near-colorless categories. Since there are no K-color diamonds, it is assumed that there are no faint-colored diamonds in the dataset. To facilitate the analysis, we will create a new column called `color_category` to group each color with its respective category. 
+
+```{r color-category-pie-chart, message=FALSE, echo=FALSE, fig.align = "center", fig.width=3, fig.height=2, fig.cap="Distribution of diamond counts by color groups"}
+
+diamond <- diamond %>%
+  mutate(color_category = case_when(
+    color %in% c("D", "E", "F") ~ "Colorless",
+    color %in% c("G", "H", "I", "J") ~ "Near-Colorless",
+    color %in% c("K") ~ "Faint"
+  ))
+
+color_counts <- diamond %>%
+  count(color_category)
+
+ggplot(color_counts, aes(x="", y=n, fill=color_category)) + 
+  geom_bar(stat="identity", width=1, color="black") + 
+  coord_polar("y", start=0) + 
+  labs(title = "Distribution of Diamond Color Groups",
+       x = NULL,
+       y = NULL,
+       fill = "Color Category") + 
+  theme_void()
+```
+
+Looking at Figure 5.3, the distribution of diamond colors appears nearly uniform, with the Colorless category containing a slightly higher number of diamonds. Given the relatively even distribution of diamond colors, further analysis is required to explore the relationship between diamond color and the other diamond factors in the dataset. Since there are only two groups with a nearly equal split, we will focus on each individual color for the rest of the analysis to gain a more comprehensive understanding of the data.  
+
+## Clarity
+
+Diamond clarity is rated based on the visibility of imperfections, with internal imperfections called inclusions and surface imperfections called blemishes. These flaws are considered clarity ‘characteristics’ since they are natural features that distinguish individual diamonds. The clarity rating is influenced by factors such as the size, number, position, nature of a characteristic, and their contrast with the surrounding diamond.  The clarity grading scale according to the Blue Nile website is described below.  
+
+
+- I1, I2, I3 (Included diamonds, lowest quality grades)
+- SI1, SI2 (Slightly Included diamonds)
+- VS1, VS2 (Very Slightly Included diamonds)
+- VVS1, VVS2 (Very, Very Slightly Included diamonds)
+- IF (Internally Flawless)
+- FL (Flawless)
+
+```{r clarity-bar-count, echo=FALSE, fig.width=4, fig.height=2, fig.align = "center", fig.cap = "Distribution of diamond counts by clarity grade"}
+# arrange clarity by rating
+clarity_ordered <- diamond %>%
+  mutate(clarity = factor(clarity, levels = c("SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF", "FL"))) %>%
+  arrange(clarity)
+
+# bar chart of counts and clarity grade
+ggplot(clarity_ordered, aes(x=clarity))+
+  geom_bar(fill = "deepskyblue3", color = "black")+
+  labs(x="Clarity Grade", y="Counts", title="Diamond Clarity Distribution") +
+  theme_minimal()
+```
+
+Figure 5.4 shows that the dataset does not carry diamonds in the Included category which contains the lowest grades. There is a large gap between the amount of Flawless and Internally Flawless diamonds compared to the rest of the lower clarity grade diamonds available. The SI and VSI categories have more diamonds available than any other category.  
+
+ 
+## Carat
+
+Diamond carat refers to the weight of a diamond. Choosing a carat weight is a matter of preference, as one weight is not necessarily better than another, but may be more expensive. 
+
+```{r carat-count-plot, warning=FALSE,message=FALSE,echo=FALSE,fig.width=4,fig.height=2.5, fig.align = "center", fig.cap="Distribution of diamond counts by carat bins"}
+ggplot(diamond, aes(x = carat)) +
+  geom_histogram(fill = "deepskyblue3", color = "black") + 
+  labs(title = "Diamond Carat Distribution",x = "Carat",y = "Counts") +
+  scale_x_continuous(breaks = seq(0, max(diamond$carat), by = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+
+```
+
+Looking at Figure 5.5, the distribution of diamond carat shows that the majority fall within the 0.25 to 0.75 carat range. Additionally, there is a sharp decline in frequency as carat size increases. 
+
+Looking at the *Summary of Diamond by Carat Range*, the majority of diamonds fall within the 0.25 to 0.75 carat range, which collectively accounts for about 65.3% of the dataset. The proportion drops significantly beyond 1 carat, with diamonds between 1.0 and 1.5 carats making up only 16.3%. As carat increases, the number of diamonds in their respective ranges decreases. 
+
+```{r Table-Carat-Price, message=FALSE, echo=FALSE}
+
+carat_summary <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
+  drop_na(carat_bin) %>%
+  count(carat_bin) %>%
+  mutate(proportions = round(n / sum(n), 3))
+kable(carat_summary, col.names = c("Carat Range", "Counts", "Proportion"),
+      caption = "Summary of Diamond by Carat Range") %>%
+  kable_styling(full_width = FALSE, position = "center", latex_options = c("HOLD_position", "striped")) %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "3cm") %>%
+  column_spec(3, width = "3cm")
+
+```
+
+Looking at Table 1, the majority of diamonds fall within the 0.25 to 0.75 carat range, which collectively accounts for about 65.3% of the dataset. The proportion drops significantly beyond 1 carat, with diamonds between 1 and 1.5 carats making up only 16.3%. As carat increases, the number of diamonds in their respective ranges decreases.
+
+# Bivariate Analysis
+
+## Intro
+
+Blue Nile’s educational page evaluates how the 4Cs impact a diamond’s appearance when selecting a diamond, but it also explores how these elements impact diamond pricing. The cost of a diamond is also an important consideration in selecting the 'best’ diamond. In this section, each of the 4Cs will be further analyzed by exploring its relationship with each other and price. Violin plots will aid in visualizing the full distribution of the data, including potential outliers, the density of observations, and the overall shape of the distribution. The numerical variable of carat will be controlled by filtering the diamonds into selected bin sizes based on the Blue Nile diamond carat size chart to aid in the comparison with price. 
+
+
+```{r Kable-Table, message=FALSE, echo=FALSE}
+Full_Tab %>%
+   kable(
+     col.names = c("Carat Range", "Cut Price Range", "Color Price Range", "Clarity Price Range"),
+     caption = "Min–Max–Avg Price Range by Carat Bin"
+   ) %>%
+   kable_styling(full_width = FALSE, position = "center", latex_options = c("HOLD_position", "striped")) %>%
+   column_spec(1, width = "5cm") %>%
+   column_spec(2:4, width = "3cm")
+```
+
+The table *Clarity/Color/Cut Max-Min Avg Price Range per Carat Bin* was created by taking the maximum quality subcategory value and subtracting the minimum quality subcategory value (as represented by the vertical orientation on the graphs) for each carat bin. This was repeated for cut, clarity, and color. The resulting values represent the price range between the highest and lowest subcategories within each carat bin, illustrating the price variation within each category. 
+
+```{r table-fl-diamonds, echo=FALSE, message=FALSE}
+# dataframe with only FL diamonds
+FL_diamonds <- clarity_ordered %>%
+  filter(clarity == "FL")
+FL_table <- head(FL_diamonds)
+
+# formatted kable table
+kable(FL_table, caption = "FL Diamonds Sample Table") %>%
+  kable_styling(full_width = FALSE, position = "center", latex_options = c("HOLD_position", "striped")) %>%
+  column_spec(1, width = "2.5cm") %>%
+  column_spec(2:ncol(FL_table), width = "3cm")
+```
+
+
+
+Since the FL diamonds have the highest rating and include the most expensive diamond, yet are the lowest in stock, we are going to look at these three diamonds alone and their features before comparing them to the other categories with the other variables.  
+
+
+The FL category alone indicates that diamonds sold with the highest clarity rating (no inclusions) tend to receive a higher color rating (more colorless) and a higher quality cut (reflects more light). This suggests that color and cut may play a more important role in the visual appearance of a Flawless diamond than carat weight or price. The two diamonds with a substantially lower carat weight also exhibit substantially lower prices, implying that carat weight and clarity might independently have a direct relationship with diamond cost, but not necessarily with all the 4Cs. The very low stock of Flawless diamonds and the huge price range support Blue Nile’s claim that clarity is not very important to them when choosing the most beautiful diamond, and that a higher price does not necessarily reflect higher quality all around. Analyzing the relationship between other variables will show if this trend remains across all the data. 
+
+
+## Violin Plots of Price Distributions
+
+```{r violin-plot-full-scale, message = FALSE, echo = FALSE, warning = FALSE, fig.width= 10, fig.height = 5.5, fig.cap = "Violin plots of diamond prices by cut, color, clarity, and carat bins"}
+g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Cut",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+
+g2 <- ggplot(diamond, aes(x = color, y = price/10000, fill = color)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Color",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g3 <- ggplot(diamond, aes(x = clarity, y = price/10000, fill = clarity)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Clarity",
+       x = "Diamond Clarity",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) + 
+  geom_violin() +
+  labs(title = "Diamond Price by Cut",
+       x = "Carat Bin",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+(g1 | g2) / (g3 | g4) + 
+  plot_annotation(title = "Violin Plot of Diamond Categories", 
+  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+Looking at the violin plots above, it is difficult to clearly observe the distribution of the data. This could be due to the presence of many outliers across the different diamond factors. There could be certain diamond factors holding a higher priority than others.  
+
+- Looking at diamond carat, as carat weight increases, the diamond price also increases, indicating a positive relationship.  
+- Looking at diamond clarity, flawless diamonds have the highest price, but the rest of the data does not seem to follow a consistent trend. However, the low stock of higher grades and the presence of outliers may be contributing to this result. 
+- Looking at diamond colors, the highest color grade are associated with higher prices, indicating another positive relationship. 
+- Looking at diamond cut, the Very Good cut appears to show higher prices compared to Ideal and Astor Ideal cuts. This suggests that other factors, such as carat and color, have more influence on price than cut. 
+
+Since these violin plots are difficult to interpret at full scale, let’s zoom in on the price range of $0 to $10,000 to gain a better visualization of the distribution of diamond prices. 
+```{r violin-plot-zoom-in, message = FALSE, warning = FALSE, echo = FALSE, fig.width= 10, fig.height = 5.5, fig.cap = "Zoomed-in violin plots of diamond prices (\\$0 to \\$10,000) by cut, color, clarity, and carat bins"}
+g1 <- ggplot(diamond, aes(x = cut, y = price/10000, fill = cut)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  theme_minimal() +
+  labs(title = "Diamond Price by Cut",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g2 <- ggplot(diamond, aes(x = color, y = price/10000, fill = color)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Color",
+       x = "Diamond Cut",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g3 <- ggplot(diamond, aes(x = clarity, y = price/10000, fill = clarity)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Clarity",
+       x = "Diamond Clarity",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+g4 <- ggplot(diamond, aes(x = carat_bin, y = price/10000, fill = carat_bin)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1))  +
+  labs(title = "Diamond Price by Color",
+       x = "Carat Bin",
+       y = "Price (in $10,000s)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 8))
+
+(g1 | g2) / (g3 | g4) + 
+  plot_annotation(title = "Zoom-In Violin Plot of Diamond Categories", 
+  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+
+
+Looking at the zoomed-in violin plots, we can better interpret how the 4Cs affect diamond price.  
+
+- The plot for diamond cuts indicates that the Very Good and Astor Ideal cuts have a higher price distribution compared to the other two cuts. Across the different cuts, outliers are present, especially within the Very Good cut group. This suggests that diamond cut influences the price, but other factors play a more important role in determining diamond prices. 
+- The plot for diamond colors shows that as color grade increases, so does diamond price. This positive trend suggests that the less color a diamond has, the more expensive it is, which supports the claim that Colorless diamonds are more expensive than Near-Colorless diamonds.  
+- The plot of diamond clarity across the clarity categories does not reveal a trend, especially since we know that the FL category contains the most expensive diamond. Looking across the quality grades, specifically within SI and VVS categories, the categories of higher stock, the higher quality grades (SI1, VS1, VVS1) appear to contain more expensive diamonds than the lower quality grades (SI2, VS2, VVS2). This trend, however, is not a strong one, indicating that clarity alone does not strongly influence diamond prices. 
+- The plot of diamond carat shows a strong, positive relationship with price. However, most diamonds are clustered into smaller bins, but that could be due to the fact that smaller diamonds are more common. This relationship suggests that carat weight affects diamond price the most. However, the other factors can impact diamond prices as well. 
+
+
+
+## Carat vs Clarity: Proportion and Price Analysis
+
+
+```{r clarity-and-carat-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap = "Diamond Carat Bin vs Clarity: Proportion and Price Heatmaps"}
+# new dataframe with carat new bins and clarity ordered
+# new dataframe with carat new bins and clarity ordered
+carat_new_bins <- clarity_ordered %>%
+  drop_na(carat) %>%
+  mutate(carat_bin = cut(carat,
+                         breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 8),
+                         labels = c("0-0.25", "0.25-0.5", "0.5-0.75", "0.75-1", "1-1.5", "1.5-2", "2-3", "3-4", "4-5", "5-8"),
+                         right = FALSE)) %>%
+  drop_na(carat_bin)
+
+# compare carat and clarity by count 
+carat_clarity1<-carat_new_bins%>%
+  count(carat_bin,clarity)%>%
+  group_by(carat_bin)%>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare carat and clarity by price
+carat_clarity2<-carat_new_bins%>%
+  group_by(clarity,carat_bin)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+ 
+# Heat maps for diamond carat by clarity
+a1 <-ggplot(carat_clarity1,aes(x=carat_bin,y=clarity,fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red") +
+  geom_text(aes(label = Percentage), size = 2.5)+
+  labs(x="Carat Bin",
+       y="Clarity",
+       title="Quantity",
+       fill = "Percentage (%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+a2 <- ggplot(carat_clarity2,aes(x=carat_bin,y=clarity,fill=avg_price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="red")+
+  geom_text(aes(label = round(avg_price/1000,2)), size = 2.5) +
+  labs(x="Carat Bin",y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+a1/a2 + 
+  plot_annotation(title = "Diamond Carat Bin vs Clarity Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+Looking at the Quantity heat map, there are more diamonds with a clarity rating of VS2 in the 4-5 carat bin. Within the lowest carat bin of 0-0.25, there are more diamonds with higher clarity categories (VS, VVS, IF). Among the rest of the higher carat weight bins, either the opposite trend or no trend is seen. Overall, there is no strong relationship seen in this heat map. This suggests that independently, clarity and carat weight do not have an important relationship to diamond appearance that Blue Nile considers when determining the value of a diamond.	
+
+Looking at the Average Price in Dollars heat map, as the clarity rating increases in the carat weights, so does the average price of the diamond. Deviations from this trend can typically be explained by heavier, highly priced diamonds or many smaller, poorly colored diamonds present in a cut-clarity combination. Increasing the carat bin size to the next bin yields a higher average price compared to increasing clarity quality up to the 0.75-1 carat bin range. When increasing clarity quality within and past the 0.75-1 carat bin range, clarity accounts for the larger average price. Since this trend is very strong among the highest carat bins, it suggests that clarity rating might have a positive relationship with price, but carat weight might play a bigger role in this relationship.  
+
+## Carat vs Cut: Proportion and Price Analysis
+
+```{r carat-cut-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Carat Bin vs Cut: Proportion and Price Heatmaps"}
+b1 <- ggplot(CutCarat,aes(x=carat_bin,y=cut,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="blue")+
+  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
+  labs(x="Carat Bin",
+       y="Cut",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+cut_carrat <- diamond %>%
+  count(cut, carat_bin) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+b2 <- ggplot(cut_carrat, aes(x = carat_bin, y = cut, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Carat Bin",
+    y = "Cut",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+
+b2/b1 + 
+  plot_annotation(title = "Diamond Carat vs Cut Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+Looking at the Quantity heat map in Figure 6.4, mainly diamonds with carat weights below 1.5 are represented across all cut categories. This supports the idea that carat weight is decided by buyer preference and budget considerations. Compared with Figure 1 from earlier, the dataset has more Very Good cuts, yet Ideal and Astor Ideal cuts are more prevalent. This suggests that cut may be prioritized over carat weight when selecting a diamond and ranked higher in importance, supporting Blue Nile’s claim. 
+
+Looking at the Average Price heat map in Figure 6.4, increasing carat bin size always yields a higher average price compared to increasing cut quality to the cut with the maximum average price within a bin. Moving horizontally to the next 0.25 carat wide bin size raises the average price more than moving vertically to the most expensive premium cut in the column.  
+
+## Color vs Carat: Proportion and Price Analysis
+
+```{r color-carat-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", error=FALSE, fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Color vs Carat Bin: Proportion and Price Heatmaps"}
+c1 <- ggplot(ColorCarat,aes(x=color,y=carat_bin,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="darkgreen")+
+  geom_text(aes(label=round(Ave_Price/1000, 2)), size = 2.5)+
+  labs(x="Color",
+       y="Carat Bin",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+color_carat <- diamond %>%
+  count(color, carat_bin) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+c2 <- ggplot(color_carat, aes(x = color, y = carat_bin, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "darkgreen") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Color",
+    y = "Carat Bin",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+c2/c1 + 
+  plot_annotation(title = "Diamond Color vs Carat Bin Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+Looking at the Quantity heat map in Figure 6.5, a majority of the diamonds are concentrated in the 0.25 to 0.75 carat range. This suggests that carat weights are typically within a smaller carat range. In the colorless category, it appears that buyers tend to prioritize Colorless diamonds over those with higher carat weights. This suggests that people are more likely to buy a smaller carat size, but for lower color grade diamond, they are more likely to buy a larger carat size. This observation supports the claim that when it comes to diamond selection based on appearance, color becomes a more important factor among larger diamonds, supporting Blue Nile’s claim. 
+
+Looking at the Average Price heat map in Figure 5.5, increasing the carat bin size up to the 1.5-2 carat bin range yields a higher average price compared to increasing the color rating. Within the 1.5-2 carat bin range and above, increasing color quality results in a larger average price. This suggests that although price increases as both carat weight and color quality increases, diamond carat is considered first in price determination, then color.  
+
+## Cut vs Color: Proportion and Price Analysis
+
+```{r color-cut-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Cut vs Color: Proportion and Price Heatmaps"}
+color_cut <- diamond %>%
+  count(cut,color) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+d1 <- ggplot(color_cut,aes(x=cut, y=color, fill=Percentage))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=Percentage), size = 2.5)+
+  labs(
+    x = "Cut",
+    y = "Color",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+d2 <- ggplot(CutColor, aes(x=cut,y=color,fill=Ave_Price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="purple")+
+  geom_text(aes(label=round(Ave_Price/1000,2)), size = 2.5)+
+  labs(x="Cut",
+       y="Color",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+d1/d2 + 
+  plot_annotation(title = "Diamond Cut vs Color Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+Looking at the Quantity heat map in Figure 6.6, the distribution of diamond color per cut appears to be more widely varied than for clarity per cut. Inversely to clarity and cut, approximately half of all the diamonds for each cut category reside in the most premium colors (D, E, F). The other half is distributed between the G, H, I, and J colors. It seems that most of the diamond cuts are Ideal, with a proportion exceeding 50% for each color grade. This suggests that higher quality cuts are more common or preferred, regardless of the color. This does not necessarily mean that cut is less important than color, rather, it is the more common choice regardless of color grade. This ties in with how buyers would decide on a balance between color and cut.  
+
+Looking at the Average Price heat map in Figure 6.6, the highest average price is in the “Good” cuts category with the color “G”. Generally, Colorless diamonds have higher average prices. There is no other clear trend observed, suggesting that color may have slightly more influence on price than cut. 
+
+## Color vs Clarity: Proportion and Price Analysis
+
+```{r color-clarity-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Clarity vs Color: Proportion and Price Heatmaps"}
+color_clarity <- diamond %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+
+e1 <- ggplot(color_clarity, aes(x = color, y = clarity, fill = Percentage)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "brown4") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Color",
+    y = "Clarity",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+# compare color and clarity by count 
+color_clarity1 <- clarity_ordered %>%
+  count(color, clarity) %>%
+  group_by(color) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare color and clarity by price 
+color_clarity2 <- clarity_ordered%>%
+  group_by(color,clarity)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+
+
+e2 <- ggplot(color_clarity2,aes(x=color,y=clarity,fill=avg_price))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="brown4")+
+  geom_text(aes(label=round(avg_price/1000, 2)), size = 2.5) +
+  labs(x="Color",
+       y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+e1/e2 + 
+  plot_annotation(title = "Diamond Clarity vs Color Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+Looking at the Quantity heat map of 6.7, the higher the color grade, the better the clarity of the diamond tends to be. Most of the diamonds fall in the SI1, VS2, and VS1 clarity grades, which contain slightly more colorless diamonds (D, E, F). Other than that, the distribution across those clarity categories is fairly consistent with no trend. This suggests that buyers prioritize color over clarity. For buyers that want a lower color grade diamond, people are more likely to choose a higher clarity as a trade-off. In relation to the claim, buyers are more likely not to prioritize clarity as much for diamond selection. Since the spread is more even distributed, it suggests that people may choose a better color or cut over a flawless clarity rating. This aligns with the claim that color plays a more significant role than clarity.
+
+Looking at the Average Price heat map in Figure 6.7, the most expensive diamonds fall within a clarity grade of VS1 or higher. The VS1, VVS2, IF, and FL diamonds that are colorless (D, E, F) are more expensive. The VVS1 diamonds that have H, G, F, and D color diamonds are the most expensive. Overall, this heat map does not indicate a clear relationship between color, clarity, and price. 	 
+
+## Clarity vs Color: Proportion and Price Analysis
+
+
+```{r cut-clarity-heatmap, warning=FALSE, message=FALSE, echo = FALSE, results="hide", fig.width=6, fig.height=4.5, fig.align="center", fig.cap="Diamond Clarity vs Color: Proportion and Price Heatmaps"}
+clarity_cut <- diamond %>%
+  count(cut, clarity) %>%
+  group_by(cut) %>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+  
+f1 <- ggplot(clarity_cut, aes(x = cut, y = clarity, fill = Percentage))+
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "orange3") +
+  geom_text(aes(label = Percentage), size = 2.5) +
+  labs(
+    x = "Cut",
+    y = "Clarity",
+    title = "Quantity",
+    fill = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+
+# new dataframe with cut and clarity ordered 
+cut_clarity<-diamond%>%
+  mutate(cut=cut%>%
+           fct_relevel(c("Good","Very Good","Ideal","Astor Ideal")))%>%
+  mutate(clarity=clarity%>%
+           fct_relevel(c("SI2","SI1","VS2","VS1","VVS2","VVS1","IF","FL")))
+
+# compare cut and clarity by count 
+cut_clarity1<-cut_clarity%>%
+  count(cut,clarity)%>%
+  group_by(cut)%>%
+  mutate(Percentage= round(n/sum(n)*100,2))
+
+# compare cut and clarity by price
+cut_clarity2<-cut_clarity%>%
+  group_by(cut,clarity)%>%
+  summarise(avg_price=round(mean(price),0))%>%
+  ungroup()
+ 
+
+f2 <- ggplot(cut_clarity2,aes(x=cut,y=clarity,fill=avg_price/1000))+
+  geom_tile()+
+  scale_fill_gradient(low="white",high="orange3") +
+  geom_text(aes(label = round(avg_price/1000, 2)), size = 2.5) +
+  labs(x="Cut",
+       y="Clarity",
+       title="Average Price ($1,000s)",
+       fill = "Avg. Price ($1,000s)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust=0.5, size = 12),
+        legend.title = element_text(hjust=0.5, size = 11))
+
+
+f1/f2 + 
+  plot_annotation(title = "Diamond Cut vs Clarity Overview",
+                  subtitle = "Proportion and Average Price Heatmaps",
+                  theme = theme(
+                    plot.title = element_text(hjust = 0.5, size = 16),
+                    plot.subtitle = element_text(hjust = 0.5, size =8 )
+  ))
+```
+
+
+Looking at the Quantity heat map in Figure 6.8, most of the higher quality cuts (Astor Ideal and Ideal) fall in the SI1, VS1, and VS2 clarity grades. Most lower quality cuts (Very Good and Good) also fall into the same clarity range with the addition of SI2 as well. Additionally, the Very Good and Ideal cuts are the only cuts within the Flawless category. Diamonds in the lowest clarity category of SI contain lower quality cuts in stock. The inverse is true when looking at the higher clarity category of VS, however, this trend does not continue in the highest clarity grades. These observations support that Blue Nile has higher quality cuts with lower clarity grades in stock since they claim that certain cuts with more reflections may hide the inclusions in SI and VS diamonds, resulting in a higher valued appearance. 
+
+
+Looking at the Average Price heat map in Figure 6.8, there is a visible increase in average price as cut quality increases among the VS1 grade alone and a visible increase in price as cut quality decreases in the higher quality VVS, IF, and FL categories. This suggests that a higher clarity rating might have a bigger impact on price than a higher cut rating. An anomaly in VS1 can be described by a majority of the diamonds in this category being of a low carat size (under 1 carat) and of comparatively poor color (G, H, I, and J). There is only one Good cut within the IF category. This diamond is 3.35 carats and worth $56151. 
+
+
+# Simple Linear Regression Modeling: Diamond Price vs Carat
+
+
+```{r Scatter-Price,message=FALSE,echo=FALSE, fig.width=4, fig.height=3, fig.cap="Diamond Price vs Carat Size",fig.align="center"}
+ggplot(diamond, aes(x = carat, y = price)) +
+  geom_point(color = "skyblue", alpha = 1) +
+  labs(title = "Diamond Price vs Carat",x = "Carat",y = "Price") +
+  geom_smooth(method = "lm", color = "blue") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+  
+```
+
+Figure 7.1 shows the relationship between carat and price with a fitted regression line as the trend. There is a positive correlation between carat and price, meaning that the diamonds with higher carats tend to be more expensive. The regression line shows the overall trend, which reflects an increase in price as carat size increases. There are some outliers that appear in the higher carat range which could be due to cut, color, and clarity. 
+
+
+```{r Table-Carat-Price-Var, warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=3,fig.align="center",fig.cap="Carat Price Variability"}
+carat_price_summary2 <- diamond %>%
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE)) %>%
+  group_by(carat_bin) %>%
+  summarise(
+    Min_Price = min(price, na.rm = TRUE),
+    Max_Price = max(price, na.rm = TRUE),
+    Avg_Price = round(mean(price, na.rm = TRUE), 2),
+    Variability_Percent = round((Max_Price - Min_Price) / Min_Price * 100,2))
+kable(carat_price_summary2, col.names = c("Carat Range", "Min Price", "Max Price", "Average Price", "Variability (%)"),
+      caption = "Summary of Diamond Prices by Carat Range") %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "3cm") %>%
+  column_spec(3, width = "3cm")
+```
+
+Looking at the *Summary of Diamond prices by Carat range Table*, there seems to be a clear trend of average and max price increasing as carat size increases. Smaller diamonds in the 0 to 0.25 carat range have a lower average price and a higher variability, revealing price fluctuations which could be influenced by factors such as cut, color, and clarity, which is also seen in the carat range of 0.25 to 1.5. In the larger 2 to 6 carat range, as average prices continue to rise, variability decreases significantly, indicating that larger diamonds tend to have more predictable pricing, likely due to the higher prices associated with higher carat diamonds. 
+
+```{r Residual-Plot, message=FALSE, echo=FALSE,fig.width=8, fig.height=6, fig.align="center",fig.cap="Residuals and Box Cox plot"}
+diamond_slr <- read.csv("diamonds4.csv")
+diamond_slr <- diamond_slr %>%   
+  mutate(carat_bin = cut(carat, breaks = c(0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8), right = FALSE))
+
+model_carat <- lm(price ~ carat, diamond_slr)
+residuals_model <- residuals(model_carat)
+par(mfrow = c(3,2))
+plot(model_carat)
+
+acf(residuals_model, main="ACF Residual Plot")
+boxcox(model_carat)
+title("Box-Cox Transformation", line =1 )
+
+```
+
+
+According to the figure above the price and carat models' assumptions are: 
+
+- Assumption 1 is not met: The average value of the residuals for differing values along the x-axis have an apparent curvature in the residual plot. 
+- Assumption 2 is not met: The vertical spread of the residuals is not constant as we move from left to right in the residual plot. 
+- Assumption 3 is met: The low autocorrelation at lag 1 in the residual plot suggests a weak dependence among the residuals. 
+- Assumption 4 is met: The plots closely align with the QQ line, providing evidence that the observations follow a normal distribution. 
+
+
+Since the assumptions were not met, the model required a transformation. A square root transformation was conducted on the Price variable to address the nonlinearity in the relationship between price and carat. Although the Box-Cox transformation suggested that a log transformation would be optimal, the square root transformation, which falls within the confidence intervals, produced the most significant improvement in the residual plots. 
+
+```{r Residual-Plot-Trans, message=FALSE, fig.width=7, fig.height=4, echo=FALSE,fig.align="center",fig.cap="Residuals plot"}
+diamond_slr$price_sqrt <- sqrt(diamond_slr$price)
+model_carat_sqrt <- lm(price_sqrt ~ carat, diamond_slr)
+residuals_model_sq <- residuals(model_carat_sqrt)
+
+par(mfrow = c(2, 2))
+plot(model_carat_sqrt)
+```
+
+Keeping in mind that assumptions are rarely perfectly met with real data, the assumptions of the transformed model based on the residual plot are listed: 
+
+- Assumption 1 is met: The average value of the residuals does not exhibit any apparent curvature across varying values on the x-axis. 
+- Assumption 2 is met: The vertical spread of the residuals is constant as we move from left to right in the residual plot. 
+- Assumption 3 is met: The low autocorrelation at lag 1 in the residual plot suggests a weak dependence among the residuals. 
+- Assumption 4 is met: The plots closely align with the QQ line, providing evidence that the observations follow a normal distribution. 
+
+
+```{r Model Summary, warning=FALSE, message=FALSE, echo = FALSE, fig.align='center', fig.height=3, fig.width = 3, fig.cap="Linear regression output"}
+print(summary(model_carat_sqrt))
+```
+
+```{r Scatter-Price-post,message=FALSE,echo=FALSE, fig.width=4, fig.height=3, fig.cap="Scatterplot of Carat vs Square Root of Price (after square root transformation) with fitted linear model",fig.align="center"}
+ggplot(diamond_slr, aes(x = carat, y = price_sqrt)) +
+  geom_point(color = "skyblue", alpha = 1) +
+  labs(title = "Diamond Carat vs Square Root of Price",
+       x = "Carat",
+       y = "Square Root of Price") +
+  geom_smooth(method = "lm", color = "blue") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+
+The Simple Linear regression model gives an equation of: 
+
+$$\sqrt{\text{Price}} = 10.14643 + (57.19923 \cdot \text{Carat})$$ 
+
+This means that for each 1 unit increase in carat, the square root of price increases by 57.19923. This model gives a p-value < 2.2e-16, indicating that carat is a strong predictor of price. This indication supports the Blue Nile claim that carat has the biggest impact on price. The model gives a $R^2$ value of 0.8959, which means that 89.59% of the variation in Price is explained by carat. 
+
+The regression model effectively shows the relationship between carat and price, showing a strong fit. The model results confirm that carat is a significant predictor of price, indicating that as the carat increases, the price follows a predictable trend. 
+
+
+
+
+# Conclusion
+
+
+
+1. From a market and consumer standpoint, buyers tend to choose a lower carat weight than a heavier carat to save money. This supports Blue Nile's claim that carat weight selection is driven by consumer preference. Among the 4Cs, carat has the greatest impact on cost. As shown in the bivariate heatmap analysis of the three categorical Cs against carat, increasing carat size correlates with higher average price, specifically in the 0-0.75 carat range, which accounts for 67% of the diamonds. Carat remains the second most important variable up until the 1.5-2 carat bin range, which accounts for an additional 21.8% of the diamonds. This supports Blue Nile's claim that carat is the strongest determinant of price. 
+2. Clarity seems to be less influential when selecting a diamond, as most buyers would choose mid-level clarity grades. Clarity is typically an important variable to cost, except in the case of the 3-4 carat bin range, in which color is the most important. Blue Nile claims that higher clarity grades do have an influence on price, which is seen for a majority of the data.
+3. The diamond quantities indicate that consumers prefer a colorless diamond over a near-colorless diamond. In combination with the clarity and cut analysis, this suggests that color is more important than clarity but less important than cut. This supports Blue Nile's claim that color is the second most important factor in choosing a diamond. Color is typically the third most important variable in determining diamond pricing.  
+4. The Ideal cut is the most represented cut in the sample by a large margin. When analyzing color against cut, all colors favored the Ideal category. Cut is the most important in the consumer selection process, which supports Blue Nile's claim. Cut is typically the least important variable regarding price, with small exceptions seen in the lowest size carat bin.  
+
